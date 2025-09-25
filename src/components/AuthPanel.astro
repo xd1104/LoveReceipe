@@ -15,13 +15,14 @@
     const signoutBtn = document.getElementById('signout-btn');
     const msg = document.getElementById('auth-msg');
 
-    const setMsg = (text) => { if (msg) msg.textContent = text; };
+    const setMsg = (text) => { if (msg) msg.textContent = String(text); };
 
     // 顯示目前登入狀態
-    const { data: sessionData } = await supabase.auth.getSession();
-    if (sessionData?.session) {
-      setMsg('已登入');
-    }
+    try {
+      const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
+      if (sessionErr) console.error('getSession error', sessionErr);
+      if (sessionData?.session) setMsg('已登入'); else setMsg('就緒');
+    } catch (e) { console.error(e); setMsg('就緒'); }
 
     supabase.auth.onAuthStateChange((_event, session) => {
       if (session) setMsg('已登入'); else setMsg('已登出');
@@ -32,8 +33,13 @@
       const email = emailInput?.value?.trim();
       if (!email) { setMsg('請輸入 Email'); return; }
       setMsg('正在寄送登入連結…');
-      const { error } = await supabase.auth.signInWithOtp({ email });
-      setMsg(error ? `登入失敗：${error.message}` : '請至信箱點擊登入連結');
+      try {
+        const { error } = await supabase.auth.signInWithOtp({ email });
+        setMsg(error ? `登入失敗：${error.message}` : '請至信箱點擊登入連結');
+      } catch (e) {
+        console.error('signInWithOtp error', e);
+        setMsg('登入失敗，請稍後再試');
+      }
     });
 
     signoutBtn?.addEventListener('click', async () => {

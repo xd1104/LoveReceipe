@@ -9,25 +9,36 @@
 
 <script type="module">
   import { supabase } from '../lib/supabase';
+  window.addEventListener('DOMContentLoaded', async () => {
+    const form = document.getElementById('auth-form');
+    const emailInput = document.getElementById('auth-email');
+    const signoutBtn = document.getElementById('signout-btn');
+    const msg = document.getElementById('auth-msg');
 
-  const form = document.getElementById('auth-form');
-  const emailInput = document.getElementById('auth-email');
-  const signoutBtn = document.getElementById('signout-btn');
-  const msg = document.getElementById('auth-msg');
+    const setMsg = (text) => { if (msg) msg.textContent = text; };
 
-  function setMsg(text) { msg.textContent = text; }
+    // 顯示目前登入狀態
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (sessionData?.session) {
+      setMsg('已登入');
+    }
 
-  form?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = emailInput?.value?.trim();
-    if (!email) { setMsg('請輸入 Email'); return; }
-    setMsg('正在寄送登入連結…');
-    const { error } = await supabase.auth.signInWithOtp({ email });
-    setMsg(error ? `登入失敗：${error.message}` : '請至信箱點擊登入連結');
-  });
+    supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) setMsg('已登入'); else setMsg('已登出');
+    });
 
-  signoutBtn?.addEventListener('click', async () => {
-    await supabase.auth.signOut();
-    setMsg('已登出');
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = emailInput?.value?.trim();
+      if (!email) { setMsg('請輸入 Email'); return; }
+      setMsg('正在寄送登入連結…');
+      const { error } = await supabase.auth.signInWithOtp({ email });
+      setMsg(error ? `登入失敗：${error.message}` : '請至信箱點擊登入連結');
+    });
+
+    signoutBtn?.addEventListener('click', async () => {
+      await supabase.auth.signOut();
+      setMsg('已登出');
+    });
   });
 </script>

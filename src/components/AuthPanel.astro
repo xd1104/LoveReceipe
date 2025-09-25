@@ -1,0 +1,19 @@
+---
+import { supabase } from "../lib/supabase";
+import Layout from "../layouts/Layout.astro";
+
+let email = "";
+let message = "";
+---
+<div class="space-y-4">
+  <form on:submit|preventDefault={async () => {
+    message = "正在寄送登入連結…";
+    const { error } = await supabase.auth.signInWithOtp({ email });
+    message = error ? `登入失敗：${error.message}` : "請至信箱點擊登入連結";
+  }} class="space-y-2">
+    <input type="email" placeholder="Email" class="border rounded px-3 py-2 w-full" value={email} on:input={(e) => email = (e.target as HTMLInputElement).value} required />
+    <button type="submit" class="px-4 py-2 bg-black text-white rounded">以 Email 登入</button>
+  </form>
+  <button class="px-4 py-2 bg-gray-200 rounded" on:click={async () => { await supabase.auth.signOut(); message = "已登出"; }}>登出</button>
+  {message && <p class="text-sm text-gray-600">{message}</p>}
+</div>

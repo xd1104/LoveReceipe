@@ -10,45 +10,15 @@
 </div>
 
 <script type="module">
-  // 直接內嵌 Supabase 初始化，避免外部模組依賴
+  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
   const SUPABASE_URL = 'https://ubhpjrfwyzlzueduvypt.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InViaHBqcmZ3eXpsenVlZHV2eXB0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3ODY0NDYsImV4cCI6MjA3NDM2MjQ0Nn0.44gSR2Ujk4kaQEw91HxCm3h6vVEdJRQ7b9kwvGXx6Ok';
-  
-  // 簡化版 Supabase 客戶端
-  const supabase = {
-    auth: {
-      async getSession() {
-        const session = localStorage.getItem('sb-auth-token');
-        return { data: { session: session ? JSON.parse(session) : null } };
-      },
-      onAuthStateChange(callback) {
-        window.addEventListener('storage', () => {
-          const session = localStorage.getItem('sb-auth-token');
-          callback('SIGNED_IN', session ? JSON.parse(session) : null);
-        });
-      },
-      async signInWithOtp({ email }) {
-        try {
-          const response = await fetch(`${SUPABASE_URL}/auth/v1/otp`, {
-            method: 'POST',
-            headers: {
-              'apikey': SUPABASE_ANON_KEY,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ email })
-          });
-          const data = await response.json();
-          return { error: data.error || null };
-        } catch (err) {
-          return { error: { message: '網路錯誤' } };
-        }
-      },
-      async signOut() {
-        localStorage.removeItem('sb-auth-token');
-        window.dispatchEvent(new StorageEvent('storage'));
-      }
-    }
-  };
+  const EMAIL_REDIRECT = 'https://xd1104.github.io/LoveReceipe/profile/';
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { persistSession: true, detectSessionInUrl: true }
+  });
 
   const form = document.getElementById('auth-form');
   const emailInput = document.getElementById('auth-email');
@@ -71,7 +41,10 @@
     if (!email) { setMsg('請輸入 Email'); return; }
     setMsg('正在寄送登入連結…');
     try {
-      const { error } = await supabase.auth.signInWithOtp({ email });
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: EMAIL_REDIRECT }
+      });
       setMsg(error ? `登入失敗：${error.message}` : '請至信箱點擊登入連結');
     } catch {
       setMsg('登入失敗，請稍後再試');

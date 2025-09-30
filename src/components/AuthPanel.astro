@@ -10,7 +10,46 @@
 </div>
 
 <script type="module">
-  import { supabase } from '/LoveReceipe/lib/supabase';
+  // 直接內嵌 Supabase 初始化，避免外部模組依賴
+  const SUPABASE_URL = 'https://ubhpjrfwyzlzueduvypt.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InViaHBqcmZ3eXpsenVlZHV2eXB0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3ODY0NDYsImV4cCI6MjA3NDM2MjQ0Nn0.44gSR2Ujk4kaQEw91HxCm3h6vVEdJRQ7b9kwvGXx6Ok';
+  
+  // 簡化版 Supabase 客戶端
+  const supabase = {
+    auth: {
+      async getSession() {
+        const session = localStorage.getItem('sb-auth-token');
+        return { data: { session: session ? JSON.parse(session) : null } };
+      },
+      onAuthStateChange(callback) {
+        window.addEventListener('storage', () => {
+          const session = localStorage.getItem('sb-auth-token');
+          callback('SIGNED_IN', session ? JSON.parse(session) : null);
+        });
+      },
+      async signInWithOtp({ email }) {
+        try {
+          const response = await fetch(`${SUPABASE_URL}/auth/v1/otp`, {
+            method: 'POST',
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email })
+          });
+          const data = await response.json();
+          return { error: data.error || null };
+        } catch (err) {
+          return { error: { message: '網路錯誤' } };
+        }
+      },
+      async signOut() {
+        localStorage.removeItem('sb-auth-token');
+        window.dispatchEvent(new StorageEvent('storage'));
+      }
+    }
+  };
+
   const form = document.getElementById('auth-form');
   const emailInput = document.getElementById('auth-email');
   const signoutBtn = document.getElementById('signout-btn');

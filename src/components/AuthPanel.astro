@@ -1,5 +1,4 @@
 ---
-import authScript from '../scripts/auth-panel.ts?url';
 ---
 <div class="space-y-4">
   <form id="auth-form" class="space-y-2">
@@ -10,4 +9,38 @@ import authScript from '../scripts/auth-panel.ts?url';
   <p id="auth-msg" class="text-sm text-gray-600"></p>
 </div>
 
-<script type="module" src={authScript}></script>
+<script type="module">
+  import { supabase } from '../lib/supabase';
+  const form = document.getElementById('auth-form');
+  const emailInput = document.getElementById('auth-email');
+  const signoutBtn = document.getElementById('signout-btn');
+  const msg = document.getElementById('auth-msg');
+  const setMsg = (text) => { if (msg) msg.textContent = String(text); };
+
+  try {
+    const { data } = await supabase.auth.getSession();
+    setMsg(data?.session ? '已登入' : '就緒');
+  } catch { setMsg('就緒'); }
+
+  supabase.auth.onAuthStateChange((_e, session) => {
+    setMsg(session ? '已登入' : '已登出');
+  });
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = emailInput?.value?.trim();
+    if (!email) { setMsg('請輸入 Email'); return; }
+    setMsg('正在寄送登入連結…');
+    try {
+      const { error } = await supabase.auth.signInWithOtp({ email });
+      setMsg(error ? `登入失敗：${error.message}` : '請至信箱點擊登入連結');
+    } catch {
+      setMsg('登入失敗，請稍後再試');
+    }
+  });
+
+  signoutBtn?.addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    setMsg('已登出');
+  });
+</script>

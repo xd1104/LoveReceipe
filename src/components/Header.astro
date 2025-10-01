@@ -7,7 +7,7 @@
     <div class="flex justify-between items-center h-16">
       <!-- Logo 和導覽 -->
       <div class="flex items-center">
-        <a href="/" class="flex items-center space-x-2">
+        <a href="/LoveReceipe/" class="flex items-center space-x-2">
           <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
             <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -19,13 +19,13 @@
 
       <!-- 導覽選單 -->
       <nav class="hidden md:flex space-x-8">
-        <a href="/" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+        <a href="/LoveReceipe/" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
           首頁
         </a>
-        <a href="/recipes" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+        <a href="/LoveReceipe/recipes" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
           食譜
         </a>
-        <a href="/notes" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+        <a href="/LoveReceipe/notes" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
           心得
         </a>
       </nav>
@@ -72,7 +72,7 @@
               class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200"
             >
               <a 
-                href="/profile" 
+                href="/LoveReceipe/profile" 
                 class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
               >
                 個人設定
@@ -104,13 +104,13 @@
     <!-- 手機版選單 -->
     <div id="mobile-menu" class="hidden md:hidden border-t border-gray-200 py-4">
       <div class="space-y-2">
-        <a href="/" class="block px-3 py-2 text-gray-700 hover:text-blue-600 rounded-md text-base font-medium">
+        <a href="/LoveReceipe/" class="block px-3 py-2 text-gray-700 hover:text-blue-600 rounded-md text-base font-medium">
           首頁
         </a>
-        <a href="/recipes" class="block px-3 py-2 text-gray-700 hover:text-blue-600 rounded-md text-base font-medium">
+        <a href="/LoveReceipe/recipes" class="block px-3 py-2 text-gray-700 hover:text-blue-600 rounded-md text-base font-medium">
           食譜
         </a>
-        <a href="/notes" class="block px-3 py-2 text-gray-700 hover:text-blue-600 rounded-md text-base font-medium">
+        <a href="/LoveReceipe/notes" class="block px-3 py-2 text-gray-700 hover:text-blue-600 rounded-md text-base font-medium">
           心得
         </a>
       </div>
@@ -343,7 +343,7 @@
         const { error } = await this.supabase.auth.signInWithOtp({
           email,
           options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback`
+            emailRedirectTo: `${window.location.origin}/LoveReceipe/auth/callback`
           }
         });
 
@@ -430,7 +430,7 @@
         
         // 跳轉到首頁或之前訪問的頁面
         setTimeout(() => {
-          const returnUrl = sessionStorage.getItem('returnUrl') || '/';
+          const returnUrl = sessionStorage.getItem('returnUrl') || '/LoveReceipe/';
           window.location.href = returnUrl;
         }, 2000);
       }

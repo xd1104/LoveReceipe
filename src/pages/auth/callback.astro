@@ -52,13 +52,13 @@ import Layout from "../../layouts/Layout.astro";
     // 繼續按鈕點擊事件
     document.getElementById('continue-btn')?.addEventListener('click', () => {
       // 跳轉到首頁或之前訪問的頁面
-      const returnUrl = sessionStorage.getItem('returnUrl') || '/';
+      const returnUrl = sessionStorage.getItem('returnUrl') || '/LoveReceipe/';
       window.location.href = returnUrl;
     });
 
     // 自動跳轉（3秒後）
     setTimeout(() => {
-      const returnUrl = sessionStorage.getItem('returnUrl') || '/';
+      const returnUrl = sessionStorage.getItem('returnUrl') || '/LoveReceipe/';
       window.location.href = returnUrl;
     }, 3000);
   });

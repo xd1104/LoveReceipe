@@ -145,21 +145,25 @@ import { getFullPath } from "../lib/utils/path";
       this.showLoading();
       
       try {
-        // 這裡會連接到實際的 API
-        // 暫時使用模擬資料
-        const mockRecipes = this.getMockRecipes();
+        // 連接到實際的 RecipeService
+        const { RecipeService } = await import('../lib/services/RecipeService');
+        const result = await RecipeService.getRecipes({
+          page: this.currentPage,
+          limit: 10,
+          ...this.filters
+        });
         
         if (this.currentPage === 1) {
-          this.recipes = mockRecipes;
+          this.recipes = result.data;
         } else {
-          this.recipes.push(...mockRecipes);
+          this.recipes.push(...result.data);
         }
         
         this.renderRecipes();
         this.hideLoading();
         
         // 檢查是否還有更多資料
-        this.hasMore = mockRecipes.length === 10; // 假設每頁 10 筆
+        this.hasMore = result.hasMore;
         
       } catch (error) {
         console.error('載入食譜失敗:', error);
@@ -287,46 +291,6 @@ import { getFullPath } from "../lib/utils/path";
       `;
     }
     
-    private getMockRecipes(): any[] {
-      return [
-        {
-          id: '1',
-          title: '番茄肉醬義大利麵',
-          description: '簡單入門款，酸甜好吃',
-          cover_url: null,
-          difficulty: 'easy',
-          minutes: 35,
-          servings: 2,
-          status: 'to_try',
-          tags: ['義大利麵', '家常菜'],
-          updated_at: '2024-01-15T10:30:00Z'
-        },
-        {
-          id: '2',
-          title: '紅燒肉',
-          description: '媽媽的拿手菜，肥而不膩',
-          cover_url: null,
-          difficulty: 'normal',
-          minutes: 90,
-          servings: 4,
-          status: 'done',
-          tags: ['中式', '豬肉', '下飯菜'],
-          updated_at: '2024-01-14T15:20:00Z'
-        },
-        {
-          id: '3',
-          title: '巧克力蛋糕',
-          description: '濃郁的巧克力香，生日必備',
-          cover_url: null,
-          difficulty: 'hard',
-          minutes: 120,
-          servings: 8,
-          status: 'favorite',
-          tags: ['甜點', '蛋糕', '巧克力'],
-          updated_at: '2024-01-13T09:15:00Z'
-        }
-      ];
-    }
     
     private showLoading() {
       const loading = document.getElementById('loading-state');

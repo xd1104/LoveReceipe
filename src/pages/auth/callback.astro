@@ -1,5 +1,6 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+import { getFullPath } from "../../lib/utils/path";
 ---
 
 <Layout>
@@ -107,7 +108,8 @@ import Layout from "../../layouts/Layout.astro";
       if (continueBtn) {
         continueBtn.textContent = '返回首頁';
         continueBtn.onclick = () => {
-          window.location.href = '/LoveReceipe/';
+          const { getClientNavigationUrl } = await import('../../lib/utils/client-path');
+          window.location.href = getClientNavigationUrl('/');
         };
       }
     }

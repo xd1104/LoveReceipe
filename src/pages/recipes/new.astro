@@ -29,11 +29,13 @@ import { getFullPath } from "../../lib/utils/path";
       submitBtn.disabled = true;
       submitBtn.textContent = '建立中...';
       
-      // 這裡會連接到實際的 API
+      // 連接到實際的 RecipeService
       console.log('新增食譜資料:', data);
       
-      // 模擬 API 呼叫
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const { RecipeService } = await import('../../lib/services/RecipeService');
+      const newRecipe = await RecipeService.createRecipe(data);
+      
+      console.log('食譜建立成功:', newRecipe);
       
       // 成功後跳轉到食譜列表
       const { getClientNavigationUrl } = await import('../../lib/utils/client-path');

@@ -42,25 +42,42 @@ import Layout from "../layouts/Layout.astro";
                 throw new Error('請先登入');
             }
             
-            // 檢查資料表是否存在
-            const { data: tables, error: tablesError } = await supabase
-                .from('information_schema.tables')
-                .select('table_name')
-                .eq('table_schema', 'public')
-                .in('table_name', ['profiles', 'recipes', 'recipe_ingredients', 'recipe_steps', 'tags', 'recipe_tags', 'notes', 'collaborators']);
+            // 使用 Supabase 允許的方式檢查資料表
+            // 直接查詢各個表來確認是否存在
+            const tableChecks = [
+                { name: 'profiles', query: () => supabase.from('profiles').select('id').limit(1) },
+                { name: 'recipes', query: () => supabase.from('recipes').select('id').limit(1) },
+                { name: 'recipe_ingredients', query: () => supabase.from('recipe_ingredients').select('id').limit(1) },
+                { name: 'recipe_steps', query: () => supabase.from('recipe_steps').select('id').limit(1) },
+                { name: 'tags', query: () => supabase.from('tags').select('id').limit(1) },
+                { name: 'recipe_tags', query: () => supabase.from('recipe_tags').select('id').limit(1) },
+                { name: 'notes', query: () => supabase.from('notes').select('id').limit(1) },
+                { name: 'collaborators', query: () => supabase.from('collaborators').select('id').limit(1) }
+            ];
             
-            if (tablesError) {
-                tableStatus.innerHTML = `❌ 查詢資料表失敗: ${tablesError.message}`;
-            } else {
-                const tableNames = tables?.map(t => t.table_name) || [];
-                const expectedTables = ['profiles', 'recipes', 'recipe_ingredients', 'recipe_steps', 'tags', 'recipe_tags', 'notes', 'collaborators'];
-                const missingTables = expectedTables.filter(t => !tableNames.includes(t));
-                
-                if (missingTables.length === 0) {
-                    tableStatus.innerHTML = '✅ 所有資料表都存在';
-                } else {
-                    tableStatus.innerHTML = `❌ 缺少資料表: ${missingTables.join(', ')}`;
+            const tableResults = [];
+            for (const table of tableChecks) {
+                try {
+                    const { error } = await table.query();
+                    if (error) {
+                        tableResults.push({ name: table.name, exists: false, error: error.message });
+                    } else {
+                        tableResults.push({ name: table.name, exists: true });
+                    }
+                } catch (err) {
+                    tableResults.push({ name: table.name, exists: false, error: err.message });
                 }
+            }
+            
+            const existingTables = tableResults.filter(t => t.exists);
+            const missingTables = tableResults.filter(t => !t.exists);
+            
+            if (missingTables.length === 0) {
+                tableStatus.innerHTML = '✅ 所有資料表都存在';
+            } else {
+                const missingNames = missingTables.map(t => t.name).join(', ');
+                const errorDetails = missingTables.map(t => `${t.name}: ${t.error}`).join('<br>');
+                tableStatus.innerHTML = `❌ 缺少資料表: ${missingNames}<br><small class="text-gray-600">${errorDetails}</small>`;
             }
             
             // 測試簡單查詢

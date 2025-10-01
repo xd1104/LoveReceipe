@@ -1,8 +1,9 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import { getFullPath } from '../lib/utils/path';
 
 // 動態生成基礎路徑
-const basePath = '/LoveReceipe';
+const basePath = getFullPath('/');
 ---
 
 <Layout>

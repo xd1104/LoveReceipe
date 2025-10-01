@@ -1,4 +1,6 @@
 ---
+import { getFullPath } from '../lib/utils/path';
+
 export interface Props {
   note: {
     id: string;
@@ -157,9 +159,10 @@ const renderStars = (rating: number) => {
   }
 
   // 編輯心得
-  function editNote(noteId: string) {
+  async function editNote(noteId: string) {
     // 導向編輯頁面或開啟編輯模態框
-    window.location.href = `/LoveReceipe/notes/edit/${noteId}`;
+    const { getClientNavigationUrl } = await import('../lib/utils/client-path');
+    window.location.href = getClientNavigationUrl(`/notes/edit/${noteId}`);
   }
 
   // 刪除心得

@@ -1,6 +1,7 @@
 ---
 export function getStaticPaths() { return []; }
 import Layout from "../../layouts/Layout.astro";
+import { getFullPath } from "../../lib/utils/path";
 const { id } = Astro.params;
 ---
 
@@ -17,7 +18,7 @@ const { id } = Astro.params;
             <!-- 返回按鈕 -->
             <div class="mb-6">
                 <a 
-                    href="../"
+                    href={getFullPath('/recipes')}
                     class="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors"
                 >
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -178,8 +179,9 @@ const { id } = Astro.params;
     
     private setupEventListeners() {
       // 編輯按鈕
-      document.getElementById('edit-btn')?.addEventListener('click', () => {
-        window.location.href = `/LoveReceipe/recipes/${this.recipeId}/edit`;
+      document.getElementById('edit-btn')?.addEventListener('click', async () => {
+        const { getClientNavigationUrl } = await import('../../lib/utils/client-path');
+        window.location.href = getClientNavigationUrl(`/recipes/${this.recipeId}/edit`);
       });
       
       // 分享按鈕

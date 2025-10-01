@@ -1,6 +1,7 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 import RecipeForm from "../../components/RecipeForm.astro";
+import { getFullPath } from "../../lib/utils/path";
 ---
 
 <Layout>
@@ -35,7 +36,8 @@ import RecipeForm from "../../components/RecipeForm.astro";
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       // 成功後跳轉到食譜列表
-      window.location.href = '/LoveReceipe/recipes';
+      const { getClientNavigationUrl } = await import('../../lib/utils/client-path');
+      window.location.href = getClientNavigationUrl('/recipes');
       
     } catch (error) {
       console.error('新增食譜失敗:', error);
@@ -49,9 +51,10 @@ import RecipeForm from "../../components/RecipeForm.astro";
   });
   
   // 處理取消操作
-  window.addEventListener('formCancel', () => {
+  window.addEventListener('formCancel', async () => {
     if (confirm('確定要取消嗎？未儲存的資料將會遺失。')) {
-      window.location.href = '/LoveReceipe/recipes';
+      const { getClientNavigationUrl } = await import('../../lib/utils/client-path');
+      window.location.href = getClientNavigationUrl('/recipes');
     }
   });
 </script>

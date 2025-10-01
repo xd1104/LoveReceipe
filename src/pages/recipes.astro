@@ -2,6 +2,7 @@
 import Layout from "../layouts/Layout.astro";
 import SearchFilter from "../components/SearchFilter.astro";
 import RecipeCard from "../components/RecipeCard.astro";
+import { getFullPath } from "../lib/utils/path";
 ---
 
 <Layout>
@@ -13,7 +14,7 @@ import RecipeCard from "../components/RecipeCard.astro";
                 <p class="text-gray-600 mt-1">管理您的料理食譜與心得</p>
             </div>
             <a 
-                href="/LoveReceipe/recipes/new"
+                href={getFullPath('/recipes/new')}
                 class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
             >
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -43,7 +44,7 @@ import RecipeCard from "../components/RecipeCard.astro";
                 <p class="mt-1 text-sm text-gray-500">開始建立您的第一個食譜吧！</p>
                 <div class="mt-6">
                     <a 
-                        href="/LoveReceipe/recipes/new"
+                        href={getFullPath('/recipes/new')}
                         class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
                     >
                         <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -272,7 +273,7 @@ import RecipeCard from "../components/RecipeCard.astro";
             </div>
             
             <div class="flex gap-2">
-              <a href="/LoveReceipe/recipes/${recipe.id}" class="flex-1 bg-blue-600 text-white text-center py-2 px-4 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors">
+              <a href="${getFullPath('/recipes')}/${recipe.id}" class="flex-1 bg-blue-600 text-white text-center py-2 px-4 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors">
                 查看詳情
               </a>
               <button class="p-2 text-gray-400 hover:text-gray-600 transition-colors" title="編輯">

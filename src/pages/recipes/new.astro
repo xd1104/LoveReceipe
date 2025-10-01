@@ -20,6 +20,7 @@ import { getFullPath } from "../../lib/utils/path";
 <script>
   // 處理表單提交
   window.addEventListener('formSubmit', async (e: CustomEvent) => {
+    console.log('收到表單提交事件:', e.detail);
     const data = e.detail;
     
     try {
@@ -28,6 +29,8 @@ import { getFullPath } from "../../lib/utils/path";
       const originalText = submitBtn.textContent;
       submitBtn.disabled = true;
       submitBtn.textContent = '建立中...';
+      
+      console.log('開始處理表單提交...');
       
       // 檢查認證狀態
       const { supabase } = await import('../../lib/supabase');

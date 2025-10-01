@@ -1,0 +1,85 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout>
+    <main class="mx-auto max-w-4xl p-6">
+        <h1 class="text-3xl font-bold text-gray-900 mb-6">資料庫連線除錯</h1>
+        
+        <div id="db-debug" class="space-y-4">
+            <div class="bg-gray-100 p-4 rounded-lg">
+                <h2 class="text-lg font-semibold mb-2">Supabase 連線狀態</h2>
+                <div id="connection-status">檢查中...</div>
+            </div>
+            
+            <div class="bg-gray-100 p-4 rounded-lg">
+                <h2 class="text-lg font-semibold mb-2">資料表檢查</h2>
+                <div id="table-status">檢查中...</div>
+            </div>
+            
+            <div class="bg-gray-100 p-4 rounded-lg">
+                <h2 class="text-lg font-semibold mb-2">測試查詢</h2>
+                <div id="query-test">測試中...</div>
+            </div>
+        </div>
+    </main>
+</Layout>
+
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const connectionStatus = document.getElementById('connection-status');
+        const tableStatus = document.getElementById('table-status');
+        const queryTest = document.getElementById('query-test');
+        
+        try {
+            // 測試 Supabase 連線
+            const { supabase } = await import('../lib/supabase');
+            connectionStatus.innerHTML = '✅ Supabase 連線成功';
+            
+            // 檢查認證狀態
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session?.user) {
+                throw new Error('請先登入');
+            }
+            
+            // 檢查資料表是否存在
+            const { data: tables, error: tablesError } = await supabase
+                .from('information_schema.tables')
+                .select('table_name')
+                .eq('table_schema', 'public')
+                .in('table_name', ['profiles', 'recipes', 'recipe_ingredients', 'recipe_steps', 'tags', 'recipe_tags', 'notes', 'collaborators']);
+            
+            if (tablesError) {
+                tableStatus.innerHTML = `❌ 查詢資料表失敗: ${tablesError.message}`;
+            } else {
+                const tableNames = tables?.map(t => t.table_name) || [];
+                const expectedTables = ['profiles', 'recipes', 'recipe_ingredients', 'recipe_steps', 'tags', 'recipe_tags', 'notes', 'collaborators'];
+                const missingTables = expectedTables.filter(t => !tableNames.includes(t));
+                
+                if (missingTables.length === 0) {
+                    tableStatus.innerHTML = '✅ 所有資料表都存在';
+                } else {
+                    tableStatus.innerHTML = `❌ 缺少資料表: ${missingTables.join(', ')}`;
+                }
+            }
+            
+            // 測試簡單查詢
+            const { data: recipes, error: recipesError } = await supabase
+                .from('recipes')
+                .select('id, title, created_at')
+                .limit(5);
+            
+            if (recipesError) {
+                queryTest.innerHTML = `❌ 查詢 recipes 表失敗: ${recipesError.message}`;
+            } else {
+                queryTest.innerHTML = `✅ 查詢成功，找到 ${recipes?.length || 0} 筆食譜`;
+            }
+            
+        } catch (error) {
+            console.error('資料庫除錯錯誤:', error);
+            connectionStatus.innerHTML = `❌ 錯誤: ${error.message}`;
+            tableStatus.innerHTML = `❌ 錯誤: ${error.message}`;
+            queryTest.innerHTML = `❌ 錯誤: ${error.message}`;
+        }
+    });
+</script>

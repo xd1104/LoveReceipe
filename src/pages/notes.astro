@@ -106,8 +106,8 @@ let error = null;
     // 檢查登入狀態
     async function checkAuthStatus() {
         try {
-            const { authManager } = await import('../lib/auth/AuthManager.ts');
-            return authManager.isLoggedIn();
+            const { authStateManager } = await import('../lib/auth/AuthStateManager.ts');
+            return await authStateManager.isLoggedIn();
         } catch (error) {
             console.error('檢查登入狀態失敗:', error);
             return false;

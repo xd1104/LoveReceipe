@@ -190,11 +190,12 @@ let error = null;
             if (profileContent) profileContent.classList.add('hidden');
 
             try {
-                const { authManager } = await import('../lib/auth/AuthManager.ts');
+                const { authStateManager } = await import('../lib/auth/AuthStateManager.ts');
                 const { ProfileService } = await import('../lib/services');
                 
-                // 先檢查登入狀態
-                if (!authManager.isLoggedIn()) {
+                // 檢查登入狀態
+                const isLoggedIn = await authStateManager.isLoggedIn();
+                if (!isLoggedIn) {
                     throw new Error('請先登入');
                 }
                 

@@ -32,34 +32,84 @@ import Layout from "../../layouts/Layout.astro";
 </Layout>
 
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    // 處理認證回調
-    const urlParams = new URLSearchParams(window.location.search);
-    const accessToken = urlParams.get('access_token');
-    const refreshToken = urlParams.get('refresh_token');
-    const type = urlParams.get('type');
-
-    if (accessToken && refreshToken) {
-      // 設定 session
-      localStorage.setItem('sb-access-token', accessToken);
-      localStorage.setItem('sb-refresh-token', refreshToken);
+  document.addEventListener('DOMContentLoaded', async () => {
+    const continueBtn = document.getElementById('continue-btn');
+    const statusText = document.querySelector('p.text-gray-600');
+    
+    try {
+      // 動態載入認證管理器
+      const { authManager, supabase } = await import('../../lib/auth/AuthManager.ts');
       
-      // 清除 URL 參數
-      const newUrl = window.location.pathname;
-      window.history.replaceState({}, document.title, newUrl);
+      // 處理認證回調
+      const urlParams = new URLSearchParams(window.location.search);
+      const accessToken = urlParams.get('access_token');
+      const refreshToken = urlParams.get('refresh_token');
+      const type = urlParams.get('type');
+
+      if (accessToken && refreshToken) {
+        // 使用 Supabase 正確設定 session
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken
+        });
+
+        if (error) {
+          throw new Error(`認證失敗: ${error.message}`);
+        }
+
+        // 等待認證狀態更新
+        await new Promise((resolve) => {
+          const unsubscribe = supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_IN' && session) {
+              unsubscribe.data.subscription.unsubscribe();
+              resolve(session);
+            }
+          });
+        });
+
+        // 清除 URL 參數
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, newUrl);
+        
+        // 更新狀態文字
+        if (statusText) {
+          statusText.textContent = '認證成功！正在載入您的資料...';
+        }
+        
+        // 等待一下讓使用者看到成功訊息
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } else {
+        throw new Error('缺少認證參數');
+      }
+
+      // 繼續按鈕點擊事件
+      continueBtn?.addEventListener('click', () => {
+        const returnUrl = sessionStorage.getItem('returnUrl') || '/LoveReceipe/';
+        window.location.href = returnUrl;
+      });
+
+      // 自動跳轉（2秒後）
+      setTimeout(() => {
+        const returnUrl = sessionStorage.getItem('returnUrl') || '/LoveReceipe/';
+        window.location.href = returnUrl;
+      }, 2000);
+
+    } catch (error) {
+      console.error('認證回調處理失敗:', error);
+      
+      // 更新狀態文字為錯誤
+      if (statusText) {
+        statusText.textContent = `認證失敗: ${error.message}`;
+        statusText.className = 'text-red-600';
+      }
+      
+      // 更新按鈕文字
+      if (continueBtn) {
+        continueBtn.textContent = '返回首頁';
+        continueBtn.onclick = () => {
+          window.location.href = '/LoveReceipe/';
+        };
+      }
     }
-
-    // 繼續按鈕點擊事件
-    document.getElementById('continue-btn')?.addEventListener('click', () => {
-      // 跳轉到首頁或之前訪問的頁面
-      const returnUrl = sessionStorage.getItem('returnUrl') || '/LoveReceipe/';
-      window.location.href = returnUrl;
-    });
-
-    // 自動跳轉（3秒後）
-    setTimeout(() => {
-      const returnUrl = sessionStorage.getItem('returnUrl') || '/LoveReceipe/';
-      window.location.href = returnUrl;
-    }, 3000);
   });
 </script>

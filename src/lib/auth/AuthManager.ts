@@ -18,6 +18,8 @@ export class AuthManager {
   private user: any = null;
   private profile: any = null;
   private listeners: Array<(user: any, profile: any) => void> = [];
+  private isInitialized: boolean = false;
+  private initPromise: Promise<void> | null = null;
 
   private constructor() {
     this.init();
@@ -31,21 +33,47 @@ export class AuthManager {
   }
 
   private async init() {
-    // 檢查現有登入狀態
-    await this.checkAuthState();
+    if (this.isInitialized) return;
     
-    // 監聽登入狀態變化
-    supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        this.user = session.user;
-        await this.loadUserProfile();
-        this.notifyListeners();
-      } else if (event === 'SIGNED_OUT') {
-        this.user = null;
-        this.profile = null;
-        this.notifyListeners();
-      }
-    });
+    this.initPromise = this.initializeAuth();
+    await this.initPromise;
+  }
+
+  private async initializeAuth() {
+    try {
+      // 檢查現有登入狀態
+      await this.checkAuthState();
+      
+      // 監聽登入狀態變化
+      supabase.auth.onAuthStateChange(async (event, session) => {
+        console.log('認證狀態變化:', event, session?.user?.id);
+        
+        if (event === 'SIGNED_IN' && session?.user) {
+          this.user = session.user;
+          await this.loadUserProfile();
+          this.notifyListeners();
+        } else if (event === 'SIGNED_OUT') {
+          this.user = null;
+          this.profile = null;
+          this.notifyListeners();
+        } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+          this.user = session.user;
+          this.notifyListeners();
+        }
+      });
+      
+      this.isInitialized = true;
+    } catch (error) {
+      console.error('認證初始化失敗:', error);
+      this.isInitialized = true; // 即使失敗也標記為已初始化
+    }
+  }
+
+  // 確保認證已初始化
+  public async ensureInitialized() {
+    if (!this.isInitialized && this.initPromise) {
+      await this.initPromise;
+    }
   }
 
   private async checkAuthState() {
@@ -90,16 +118,41 @@ export class AuthManager {
   }
 
   // 公共方法
-  public getUser() {
+  public async getUser() {
+    await this.ensureInitialized();
     return this.user;
   }
 
-  public getProfile() {
+  public async getProfile() {
+    await this.ensureInitialized();
     return this.profile;
   }
 
-  public isLoggedIn() {
+  public async isLoggedIn() {
+    await this.ensureInitialized();
     return !!this.user;
+  }
+
+  // 強制刷新認證狀態
+  public async refreshAuthState() {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        this.user = session.user;
+        await this.loadUserProfile();
+        this.notifyListeners();
+        return true;
+      } else {
+        this.user = null;
+        this.profile = null;
+        this.notifyListeners();
+        return false;
+      }
+    } catch (error) {
+      console.error('刷新認證狀態失敗:', error);
+      return false;
+    }
   }
 
   public addListener(listener: (user: any, profile: any) => void) {

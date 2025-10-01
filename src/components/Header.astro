@@ -231,9 +231,9 @@
       });
     }
 
-    private updateDisplay() {
-      const user = this.authManager.getUser();
-      const profile = this.authManager.getProfile();
+    private async updateDisplay() {
+      const user = await this.authManager.getUser();
+      const profile = await this.authManager.getProfile();
 
       if (user) {
         this.showUserSection();

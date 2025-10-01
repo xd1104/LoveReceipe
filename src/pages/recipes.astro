@@ -69,6 +69,11 @@ import { getFullPath } from "../lib/utils/path";
                     載入更多
                 </button>
             </div>
+            
+            <!-- 錯誤狀態 -->
+            <div id="error-container" class="hidden">
+                <!-- 錯誤內容會動態插入這裡 -->
+            </div>
         </div>
     </main>
 </Layout>
@@ -319,8 +324,29 @@ import { getFullPath } from "../lib/utils/path";
     }
     
     private showError(message: string) {
-      // 簡單的錯誤顯示，可以後續改進
-      alert(message);
+      // 隱藏載入狀態
+      this.hideLoading();
+      
+      // 顯示錯誤訊息
+      const errorContainer = document.getElementById('error-container');
+      if (errorContainer) {
+        errorContainer.innerHTML = `
+          <div class="text-center py-8">
+            <div class="text-red-600 text-lg font-medium mb-2">載入失敗</div>
+            <div class="text-gray-600">${message}</div>
+            <button 
+              onclick="location.reload()" 
+              class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+            >
+              重新載入
+            </button>
+          </div>
+        `;
+        errorContainer.classList.remove('hidden');
+      } else {
+        // 如果沒有錯誤容器，使用 alert
+        alert(message);
+      }
     }
   }
   

@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import Header from "../components/Header.astro";
 ---
 <!doctype html>
 <html lang="zh-Hant">
@@ -20,8 +21,11 @@ import "../styles/global.css";
         
         <title>我們的食譜本</title>
     </head>
-    <body class="min-h-dvh bg-white text-gray-900">
-        <slot />
+    <body class="min-h-dvh bg-gray-50 text-gray-900">
+        <Header />
+        <main>
+            <slot />
+        </main>
         
         <!-- 版本檢查腳本 -->
         <script is:inline>

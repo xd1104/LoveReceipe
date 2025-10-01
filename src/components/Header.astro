@@ -1,0 +1,444 @@
+---
+// 這個元件會在客戶端載入時處理登入狀態
+---
+
+<header class="bg-white shadow-sm border-b border-gray-200">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center h-16">
+      <!-- Logo 和導覽 -->
+      <div class="flex items-center">
+        <a href="/" class="flex items-center space-x-2">
+          <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+          </div>
+          <span class="text-xl font-bold text-gray-900">我們的食譜本</span>
+        </a>
+      </div>
+
+      <!-- 導覽選單 -->
+      <nav class="hidden md:flex space-x-8">
+        <a href="/" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+          首頁
+        </a>
+        <a href="/recipes" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+          食譜
+        </a>
+        <a href="/notes" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+          心得
+        </a>
+      </nav>
+
+      <!-- 使用者區域 -->
+      <div class="flex items-center space-x-4">
+        <!-- 未登入狀態 -->
+        <div id="auth-section" class="hidden">
+          <button 
+            id="login-btn"
+            class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
+          >
+            登入
+          </button>
+        </div>
+
+        <!-- 已登入狀態 -->
+        <div id="user-section" class="hidden flex items-center space-x-4">
+          <!-- 使用者頭像和名稱 -->
+          <div class="flex items-center space-x-2">
+            <img 
+              id="user-avatar" 
+              src="/default-avatar.svg" 
+              alt="使用者頭像"
+              class="w-8 h-8 rounded-full object-cover"
+            />
+            <span id="user-name" class="text-sm font-medium text-gray-700">使用者</span>
+          </div>
+
+          <!-- 下拉選單 -->
+          <div class="relative">
+            <button 
+              id="user-menu-btn"
+              class="flex items-center text-gray-700 hover:text-blue-600 transition-colors"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            <!-- 下拉選單內容 -->
+            <div 
+              id="user-menu" 
+              class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200"
+            >
+              <a 
+                href="/profile" 
+                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+              >
+                個人設定
+              </a>
+              <button 
+                id="logout-btn"
+                class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+              >
+                登出
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 手機版選單按鈕 -->
+      <div class="md:hidden">
+        <button 
+          id="mobile-menu-btn"
+          class="text-gray-700 hover:text-blue-600 p-2"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- 手機版選單 -->
+    <div id="mobile-menu" class="hidden md:hidden border-t border-gray-200 py-4">
+      <div class="space-y-2">
+        <a href="/" class="block px-3 py-2 text-gray-700 hover:text-blue-600 rounded-md text-base font-medium">
+          首頁
+        </a>
+        <a href="/recipes" class="block px-3 py-2 text-gray-700 hover:text-blue-600 rounded-md text-base font-medium">
+          食譜
+        </a>
+        <a href="/notes" class="block px-3 py-2 text-gray-700 hover:text-blue-600 rounded-md text-base font-medium">
+          心得
+        </a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- 登入模態框 -->
+<div id="login-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg max-w-md w-full mx-4 p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-xl font-bold text-gray-900">登入</h2>
+      <button 
+        id="close-login-modal"
+        class="text-gray-400 hover:text-gray-600 text-2xl"
+      >
+        ×
+      </button>
+    </div>
+
+    <form id="login-form" class="space-y-4">
+      <div>
+        <label for="login-email" class="block text-sm font-medium text-gray-700 mb-2">
+          Email 地址
+        </label>
+        <input 
+          type="email" 
+          id="login-email" 
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          placeholder="請輸入您的 Email"
+          required
+        />
+      </div>
+
+      <div id="login-message" class="text-sm text-gray-600 hidden">
+        <!-- 登入訊息會顯示在這裡 -->
+      </div>
+
+      <button 
+        type="submit"
+        id="login-submit-btn"
+        class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        發送登入連結
+      </button>
+    </form>
+
+    <div class="mt-4 text-xs text-gray-500">
+      <p>我們會發送一個登入連結到您的信箱</p>
+      <p>點擊連結即可完成登入</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  class AuthManager {
+    private supabase: any = null;
+    private user: any = null;
+    private profile: any = null;
+
+    constructor() {
+      this.init();
+    }
+
+    private async init() {
+      // 動態載入 Supabase
+      const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+      
+      this.supabase = createClient(
+        'https://ubhpjrfwyzlzueduvypt.supabase.co',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InViaHBqcmZ3eXpsenVlZHV2eXB0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3ODY0NDYsImV4cCI6MjA3NDM2MjQ0Nn0.44gSR2Ujk4kaQEw91HxCm3h6vVEdJRQ7b9kwvGXx6Ok',
+        {
+          auth: { 
+            persistSession: true, 
+            detectSessionInUrl: true,
+            autoRefreshToken: true
+          }
+        }
+      );
+
+      this.setupEventListeners();
+      await this.checkAuthState();
+      this.handleAuthRedirect();
+    }
+
+    private setupEventListeners() {
+      // 登入按鈕
+      document.getElementById('login-btn')?.addEventListener('click', () => {
+        this.showLoginModal();
+      });
+
+      // 關閉登入模態框
+      document.getElementById('close-login-modal')?.addEventListener('click', () => {
+        this.hideLoginModal();
+      });
+
+      // 登入表單提交
+      document.getElementById('login-form')?.addEventListener('submit', (e) => {
+        this.handleLogin(e);
+      });
+
+      // 登出按鈕
+      document.getElementById('logout-btn')?.addEventListener('click', () => {
+        this.handleLogout();
+      });
+
+      // 使用者選單切換
+      document.getElementById('user-menu-btn')?.addEventListener('click', () => {
+        this.toggleUserMenu();
+      });
+
+      // 手機版選單切換
+      document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
+        this.toggleMobileMenu();
+      });
+
+      // 點擊外部關閉選單
+      document.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement;
+        if (!target.closest('#user-menu-btn') && !target.closest('#user-menu')) {
+          this.hideUserMenu();
+        }
+      });
+    }
+
+    private async checkAuthState() {
+      try {
+        const { data: { session } } = await this.supabase.auth.getSession();
+        
+        if (session?.user) {
+          this.user = session.user;
+          await this.loadUserProfile();
+          this.showUserSection();
+        } else {
+          this.showAuthSection();
+        }
+      } catch (error) {
+        console.error('檢查登入狀態失敗:', error);
+        this.showAuthSection();
+      }
+
+      // 監聽登入狀態變化
+      this.supabase.auth.onAuthStateChange(async (event, session) => {
+        if (event === 'SIGNED_IN' && session?.user) {
+          this.user = session.user;
+          await this.loadUserProfile();
+          this.showUserSection();
+          this.hideLoginModal();
+        } else if (event === 'SIGNED_OUT') {
+          this.user = null;
+          this.profile = null;
+          this.showAuthSection();
+        }
+      });
+    }
+
+    private async loadUserProfile() {
+      if (!this.user) return;
+
+      try {
+        const { data: profile } = await this.supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', this.user.id)
+          .single();
+
+        this.profile = profile;
+        this.updateUserDisplay();
+      } catch (error) {
+        console.error('載入使用者資料失敗:', error);
+      }
+    }
+
+    private updateUserDisplay() {
+      const userName = document.getElementById('user-name');
+      const userAvatar = document.getElementById('user-avatar') as HTMLImageElement;
+
+      if (this.profile?.nickname) {
+        userName.textContent = this.profile.nickname;
+      } else {
+        userName.textContent = this.user?.email?.split('@')[0] || '使用者';
+      }
+
+      if (this.profile?.avatar_url) {
+        userAvatar.src = this.profile.avatar_url;
+      } else {
+        userAvatar.src = '/default-avatar.svg';
+      }
+    }
+
+    private showLoginModal() {
+      const modal = document.getElementById('login-modal');
+      modal?.classList.remove('hidden');
+      modal?.classList.add('flex');
+    }
+
+    private hideLoginModal() {
+      const modal = document.getElementById('login-modal');
+      modal?.classList.add('hidden');
+      modal?.classList.remove('flex');
+    }
+
+    private showAuthSection() {
+      document.getElementById('auth-section')?.classList.remove('hidden');
+      document.getElementById('user-section')?.classList.add('hidden');
+    }
+
+    private showUserSection() {
+      document.getElementById('auth-section')?.classList.add('hidden');
+      document.getElementById('user-section')?.classList.remove('hidden');
+    }
+
+    private async handleLogin(e: Event) {
+      e.preventDefault();
+      
+      const email = (document.getElementById('login-email') as HTMLInputElement)?.value?.trim();
+      const submitBtn = document.getElementById('login-submit-btn') as HTMLButtonElement;
+      const message = document.getElementById('login-message');
+
+      if (!email) {
+        this.showMessage('請輸入 Email 地址', 'error');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = '發送中...';
+      this.showMessage('正在發送登入連結...', 'info');
+
+      try {
+        const { error } = await this.supabase.auth.signInWithOtp({
+          email,
+          options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback`
+          }
+        });
+
+        if (error) {
+          this.showMessage(`發送失敗：${error.message}`, 'error');
+        } else {
+          this.showMessage('登入連結已發送到您的信箱，請檢查並點擊連結完成登入', 'success');
+        }
+      } catch (error) {
+        console.error('登入失敗:', error);
+        this.showMessage('發送失敗，請稍後再試', 'error');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '發送登入連結';
+      }
+    }
+
+    private async handleLogout() {
+      try {
+        await this.supabase.auth.signOut();
+        this.hideUserMenu();
+      } catch (error) {
+        console.error('登出失敗:', error);
+      }
+    }
+
+    private toggleUserMenu() {
+      const menu = document.getElementById('user-menu');
+      menu?.classList.toggle('hidden');
+    }
+
+    private hideUserMenu() {
+      const menu = document.getElementById('user-menu');
+      menu?.classList.add('hidden');
+    }
+
+    private toggleMobileMenu() {
+      const menu = document.getElementById('mobile-menu');
+      menu?.classList.toggle('hidden');
+    }
+
+    private showMessage(text: string, type: 'info' | 'success' | 'error') {
+      const message = document.getElementById('login-message');
+      if (!message) return;
+
+      message.textContent = text;
+      message.classList.remove('hidden', 'text-gray-600', 'text-green-600', 'text-red-600');
+      
+      switch (type) {
+        case 'success':
+          message.classList.add('text-green-600');
+          break;
+        case 'error':
+          message.classList.add('text-red-600');
+          break;
+        default:
+          message.classList.add('text-gray-600');
+      }
+    }
+
+    private handleAuthRedirect() {
+      // 檢查 URL 中是否有認證回調參數
+      const urlParams = new URLSearchParams(window.location.search);
+      const accessToken = urlParams.get('access_token');
+      const refreshToken = urlParams.get('refresh_token');
+      const type = urlParams.get('type');
+
+      if (type === 'recovery' && accessToken && refreshToken) {
+        // 處理密碼重設回調
+        this.showMessage('密碼重設連結已驗證，請設定新密碼', 'success');
+      } else if (accessToken && refreshToken) {
+        // 處理登入回調
+        this.showMessage('登入成功！正在跳轉...', 'success');
+        
+        // 設定 session
+        this.supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken
+        });
+        
+        // 清除 URL 參數
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, newUrl);
+        
+        // 跳轉到首頁或之前訪問的頁面
+        setTimeout(() => {
+          const returnUrl = sessionStorage.getItem('returnUrl') || '/';
+          window.location.href = returnUrl;
+        }, 2000);
+      }
+    }
+  }
+
+  // 初始化認證管理器
+  document.addEventListener('DOMContentLoaded', () => {
+    new AuthManager();
+  });
+</script>

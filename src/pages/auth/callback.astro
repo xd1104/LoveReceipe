@@ -1,0 +1,65 @@
+---
+import Layout from "../../layouts/Layout.astro";
+---
+
+<Layout>
+  <main class="min-h-screen flex items-center justify-center bg-gray-50">
+    <div class="max-w-md w-full bg-white rounded-lg shadow-md p-8 text-center">
+      <div class="mb-6">
+        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-900 mb-2">登入成功！</h1>
+        <p class="text-gray-600">您已成功登入我們的食譜本</p>
+      </div>
+
+      <div class="space-y-4">
+        <button 
+          id="continue-btn"
+          class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
+        >
+          繼續使用
+        </button>
+        
+        <p class="text-sm text-gray-500">
+          如果頁面沒有自動跳轉，請點擊上方按鈕
+        </p>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // 處理認證回調
+    const urlParams = new URLSearchParams(window.location.search);
+    const accessToken = urlParams.get('access_token');
+    const refreshToken = urlParams.get('refresh_token');
+    const type = urlParams.get('type');
+
+    if (accessToken && refreshToken) {
+      // 設定 session
+      localStorage.setItem('sb-access-token', accessToken);
+      localStorage.setItem('sb-refresh-token', refreshToken);
+      
+      // 清除 URL 參數
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+    }
+
+    // 繼續按鈕點擊事件
+    document.getElementById('continue-btn')?.addEventListener('click', () => {
+      // 跳轉到首頁或之前訪問的頁面
+      const returnUrl = sessionStorage.getItem('returnUrl') || '/';
+      window.location.href = returnUrl;
+    });
+
+    // 自動跳轉（3秒後）
+    setTimeout(() => {
+      const returnUrl = sessionStorage.getItem('returnUrl') || '/';
+      window.location.href = returnUrl;
+    }, 3000);
+  });
+</script>

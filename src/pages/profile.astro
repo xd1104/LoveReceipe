@@ -27,13 +27,8 @@ try {
             <p class="text-gray-600">管理您的個人資料與偏好設定</p>
         </div>
 
-        <!-- 登入狀態檢查 -->
-        <div id="auth-check" class="mb-8">
-            <AuthPanel />
-        </div>
-
         <!-- 個人化設定內容 -->
-        <div id="profile-content" class="hidden">
+        <div id="profile-content">
             <!-- 統計資料卡片 -->
             {stats && (
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -95,7 +90,7 @@ try {
                             <div class="relative">
                                 <img 
                                     id="avatar-preview" 
-                                    src={profile?.avatar_url || '/default-avatar.png'} 
+                                    src={profile?.avatar_url || '/default-avatar.svg'} 
                                     alt="頭像預覽"
                                     class="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
                                 />
@@ -215,11 +210,7 @@ try {
         }
 
         private showProfileContent() {
-            const authCheck = document.getElementById('auth-check');
-            const profileContent = document.getElementById('profile-content');
-            
-            if (authCheck) authCheck.classList.add('hidden');
-            if (profileContent) profileContent.classList.remove('hidden');
+            // 個人化內容現在總是顯示，由 Header 處理登入狀態
         }
 
         private setupEventListeners() {

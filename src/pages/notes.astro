@@ -98,14 +98,8 @@ try {
     // 檢查登入狀態
     async function checkAuthStatus() {
         try {
-            const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
-            const supabase = createClient(
-                'https://ubhpjrfwyzlzueduvypt.supabase.co',
-                'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InViaHBqcmZ3eXpsenVlZHV2eXB0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3ODY0NDYsImV4cCI6MjA3NDM2MjQ0Nn0.44gSR2Ujk4kaQEw91HxCm3h6vVEdJRQ7b9kwvGXx6Ok'
-            );
-            
-            const { data: { session } } = await supabase.auth.getSession();
-            return !!session?.user;
+            const { authManager } = await import('../lib/auth/AuthManager.ts');
+            return authManager.isLoggedIn();
         } catch (error) {
             console.error('檢查登入狀態失敗:', error);
             return false;

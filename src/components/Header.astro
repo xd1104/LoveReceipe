@@ -166,34 +166,29 @@
 </div>
 
 <script>
-  class AuthManager {
+  class HeaderAuthManager {
     private supabase: any = null;
-    private user: any = null;
-    private profile: any = null;
+    private authManager: any = null;
 
     constructor() {
       this.init();
     }
 
     private async init() {
-      // 動態載入 Supabase
-      const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+      // 動態載入全域認證管理器
+      const { authManager, supabase } = await import('../lib/auth/AuthManager.ts');
       
-      this.supabase = createClient(
-        'https://ubhpjrfwyzlzueduvypt.supabase.co',
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InViaHBqcmZ3eXpsenVlZHV2eXB0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3ODY0NDYsImV4cCI6MjA3NDM2MjQ0Nn0.44gSR2Ujk4kaQEw91HxCm3h6vVEdJRQ7b9kwvGXx6Ok',
-        {
-          auth: { 
-            persistSession: true, 
-            detectSessionInUrl: true,
-            autoRefreshToken: true
-          }
-        }
-      );
+      this.authManager = authManager;
+      this.supabase = supabase;
 
       this.setupEventListeners();
-      await this.checkAuthState();
+      this.updateDisplay();
       this.handleAuthRedirect();
+      
+      // 監聽認證狀態變化
+      this.authManager.addListener((user: any, profile: any) => {
+        this.updateDisplay();
+      });
     }
 
     private setupEventListeners() {
@@ -236,66 +231,30 @@
       });
     }
 
-    private async checkAuthState() {
-      try {
-        const { data: { session } } = await this.supabase.auth.getSession();
-        
-        if (session?.user) {
-          this.user = session.user;
-          await this.loadUserProfile();
-          this.showUserSection();
-        } else {
-          this.showAuthSection();
-        }
-      } catch (error) {
-        console.error('檢查登入狀態失敗:', error);
+    private updateDisplay() {
+      const user = this.authManager.getUser();
+      const profile = this.authManager.getProfile();
+
+      if (user) {
+        this.showUserSection();
+        this.updateUserDisplay(user, profile);
+      } else {
         this.showAuthSection();
       }
-
-      // 監聽登入狀態變化
-      this.supabase.auth.onAuthStateChange(async (event, session) => {
-        if (event === 'SIGNED_IN' && session?.user) {
-          this.user = session.user;
-          await this.loadUserProfile();
-          this.showUserSection();
-          this.hideLoginModal();
-        } else if (event === 'SIGNED_OUT') {
-          this.user = null;
-          this.profile = null;
-          this.showAuthSection();
-        }
-      });
     }
 
-    private async loadUserProfile() {
-      if (!this.user) return;
-
-      try {
-        const { data: profile } = await this.supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', this.user.id)
-          .single();
-
-        this.profile = profile;
-        this.updateUserDisplay();
-      } catch (error) {
-        console.error('載入使用者資料失敗:', error);
-      }
-    }
-
-    private updateUserDisplay() {
+    private updateUserDisplay(user: any, profile: any) {
       const userName = document.getElementById('user-name');
       const userAvatar = document.getElementById('user-avatar') as HTMLImageElement;
 
-      if (this.profile?.nickname) {
-        userName.textContent = this.profile.nickname;
+      if (profile?.nickname) {
+        userName.textContent = profile.nickname;
       } else {
-        userName.textContent = this.user?.email?.split('@')[0] || '使用者';
+        userName.textContent = user?.email?.split('@')[0] || '使用者';
       }
 
-      if (this.profile?.avatar_url) {
-        userAvatar.src = this.profile.avatar_url;
+      if (profile?.avatar_url) {
+        userAvatar.src = profile.avatar_url;
       } else {
         userAvatar.src = '/default-avatar.svg';
       }
@@ -363,7 +322,7 @@
 
     private async handleLogout() {
       try {
-        await this.supabase.auth.signOut();
+        await this.authManager.signOut();
         this.hideUserMenu();
       } catch (error) {
         console.error('登出失敗:', error);
@@ -439,6 +398,6 @@
 
   // 初始化認證管理器
   document.addEventListener('DOMContentLoaded', () => {
-    new AuthManager();
+    new HeaderAuthManager();
   });
 </script>

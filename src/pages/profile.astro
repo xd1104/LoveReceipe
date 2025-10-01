@@ -197,8 +197,15 @@ try {
 
         private async loadProfile() {
             try {
-                // 直接使用 ProfileService 取得個人資料
+                const { authManager } = await import('../lib/auth/AuthManager.ts');
                 const { ProfileService } = await import('../lib/services');
+                
+                // 先檢查登入狀態
+                if (!authManager.isLoggedIn()) {
+                    console.log('使用者未登入');
+                    return;
+                }
+                
                 this.profile = await ProfileService.getProfile();
                 
                 if (this.profile) {
@@ -248,7 +255,7 @@ try {
             try {
                 // 直接使用 ImageService 上傳圖片
                 const { ImageService } = await import('../lib/services');
-                const result = await ImageService.uploadImage(file);
+                const result = await ImageService.uploadImage(file, 'avatars');
                 this.uploadedAvatarUrl = result.url;
                 
                 // 更新預覽
@@ -256,6 +263,10 @@ try {
                 if (preview) {
                     preview.src = result.url;
                 }
+                
+                // 通知全域認證管理器更新頭像
+                const { authManager } = await import('../lib/auth/AuthManager.ts');
+                await authManager.refreshProfile();
             } catch (error) {
                 console.error('頭像上傳失敗:', error);
                 alert('頭像上傳時發生錯誤');
@@ -285,6 +296,10 @@ try {
                     nickname: nickname.trim(),
                     avatar_url: this.uploadedAvatarUrl || this.profile?.avatar_url
                 });
+
+                // 通知全域認證管理器更新資料
+                const { authManager } = await import('../lib/auth/AuthManager.ts');
+                await authManager.refreshProfile();
 
                 alert('個人資料已更新');
                 // 重新載入頁面以更新統計資料

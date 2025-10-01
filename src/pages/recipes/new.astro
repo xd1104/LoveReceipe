@@ -35,7 +35,7 @@ import RecipeForm from "../../components/RecipeForm.astro";
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       // 成功後跳轉到食譜列表
-      window.location.href = '/recipes';
+      window.location.href = '/LoveReceipe/recipes';
       
     } catch (error) {
       console.error('新增食譜失敗:', error);
@@ -51,7 +51,7 @@ import RecipeForm from "../../components/RecipeForm.astro";
   // 處理取消操作
   window.addEventListener('formCancel', () => {
     if (confirm('確定要取消嗎？未儲存的資料將會遺失。')) {
-      window.location.href = '/recipes';
+      window.location.href = '/LoveReceipe/recipes';
     }
   });
 </script>

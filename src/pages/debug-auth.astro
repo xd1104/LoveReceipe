@@ -1,0 +1,61 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout>
+    <main class="mx-auto max-w-4xl p-6">
+        <h1 class="text-3xl font-bold text-gray-900 mb-6">認證狀態除錯</h1>
+        
+        <div id="auth-debug" class="space-y-4">
+            <div class="bg-gray-100 p-4 rounded-lg">
+                <h2 class="text-lg font-semibold mb-2">認證狀態</h2>
+                <div id="auth-status">檢查中...</div>
+            </div>
+            
+            <div class="bg-gray-100 p-4 rounded-lg">
+                <h2 class="text-lg font-semibold mb-2">使用者資訊</h2>
+                <div id="user-info">載入中...</div>
+            </div>
+            
+            <div class="bg-gray-100 p-4 rounded-lg">
+                <h2 class="text-lg font-semibold mb-2">Supabase 連線測試</h2>
+                <div id="supabase-test">測試中...</div>
+            </div>
+        </div>
+    </main>
+</Layout>
+
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const authStatus = document.getElementById('auth-status');
+        const userInfo = document.getElementById('user-info');
+        const supabaseTest = document.getElementById('supabase-test');
+        
+        try {
+            // 測試 Supabase 連線
+            const { supabase } = await import('../lib/supabase');
+            supabaseTest.innerHTML = '✅ Supabase 連線成功';
+            
+            // 檢查認證狀態
+            const { data: { session } } = await supabase.auth.getSession();
+            
+            if (session?.user) {
+                authStatus.innerHTML = '✅ 使用者已登入';
+                userInfo.innerHTML = `
+                    <p><strong>Email:</strong> ${session.user.email}</p>
+                    <p><strong>ID:</strong> ${session.user.id}</p>
+                    <p><strong>建立時間:</strong> ${new Date(session.user.created_at).toLocaleString()}</p>
+                `;
+            } else {
+                authStatus.innerHTML = '❌ 使用者未登入';
+                userInfo.innerHTML = '無使用者資訊';
+            }
+            
+        } catch (error) {
+            console.error('除錯錯誤:', error);
+            authStatus.innerHTML = `❌ 錯誤: ${error.message}`;
+            userInfo.innerHTML = `錯誤: ${error.message}`;
+            supabaseTest.innerHTML = `❌ 錯誤: ${error.message}`;
+        }
+    });
+</script>

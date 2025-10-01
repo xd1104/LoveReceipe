@@ -63,10 +63,12 @@ export class RecipeService {
   static async getRecipes(filters: RecipeFilters = {}): Promise<{ data: Recipe[]; hasMore: boolean }> {
     try {
       // 檢查使用者認證狀態
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
         throw new Error('請先登入');
       }
+      
+      const user = session.user;
 
       let query = supabase
         .from('recipes')
@@ -179,10 +181,12 @@ export class RecipeService {
   static async createRecipe(recipeData: Partial<Recipe>): Promise<Recipe> {
     try {
       // 取得目前使用者
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
         throw new Error('請先登入');
       }
+      
+      const user = session.user;
 
       // 建立食譜主記錄
       const { data: recipe, error: recipeError } = await supabase

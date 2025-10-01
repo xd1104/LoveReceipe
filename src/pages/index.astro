@@ -1,15 +1,183 @@
 ---
-import Welcome from '../components/Welcome.astro';
 import Layout from '../layouts/Layout.astro';
-
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
 ---
 
 <Layout>
-	<main class="mx-auto max-w-3xl p-6">
-		<h1 class="text-2xl font-bold mb-4">我們的食譜本</h1>
-		<p class="text-gray-600 mb-6">歡迎！請從上方導覽進入各頁面。</p>
-		<Welcome />
+	<main class="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
+		<!-- 英雄區域 -->
+		<div class="relative overflow-hidden">
+			<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+				<div class="text-center">
+					<h1 class="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
+						我們的食譜本
+					</h1>
+					<p class="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+						記錄美好的料理時光，與摯愛分享每一道美味
+					</p>
+					
+					<!-- 主要操作按鈕 -->
+					<div class="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+						<a 
+							href="/recipes/new"
+							class="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg hover:shadow-xl"
+						>
+							<svg class="w-6 h-6 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+							</svg>
+							新增食譜
+						</a>
+						<a 
+							href="/recipes"
+							class="bg-white text-gray-700 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-50 transition-colors shadow-lg hover:shadow-xl border border-gray-200"
+						>
+							<svg class="w-6 h-6 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+							</svg>
+							瀏覽食譜
+						</a>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- 功能特色 -->
+		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+			<div class="text-center mb-12">
+				<h2 class="text-3xl font-bold text-gray-900 mb-4">功能特色</h2>
+				<p class="text-gray-600">讓料理記錄變得簡單而美好</p>
+			</div>
+			
+			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+				<!-- 功能卡片 1 -->
+				<div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+					<div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+						<svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+						</svg>
+					</div>
+					<h3 class="text-xl font-semibold text-gray-900 mb-2">食譜管理</h3>
+					<p class="text-gray-600">輕鬆記錄每道菜的食材、步驟和心得，讓料理過程一目了然</p>
+				</div>
+
+				<!-- 功能卡片 2 -->
+				<div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+					<div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+						<svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+						</svg>
+					</div>
+					<h3 class="text-xl font-semibold text-gray-900 mb-2">智慧搜尋</h3>
+					<p class="text-gray-600">快速找到想要的食譜，支援標籤篩選和關鍵字搜尋</p>
+				</div>
+
+				<!-- 功能卡片 3 -->
+				<div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+					<div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+						<svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+						</svg>
+					</div>
+					<h3 class="text-xl font-semibold text-gray-900 mb-2">共同編輯</h3>
+					<p class="text-gray-600">與摯愛一起編輯食譜，分享料理心得和美好時光</p>
+				</div>
+
+				<!-- 功能卡片 4 -->
+				<div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+					<div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center mb-4">
+						<svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+						</svg>
+					</div>
+					<h3 class="text-xl font-semibold text-gray-900 mb-2">圖片記錄</h3>
+					<p class="text-gray-600">上傳料理照片，記錄每個美好瞬間</p>
+				</div>
+
+				<!-- 功能卡片 5 -->
+				<div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+					<div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mb-4">
+						<svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+						</svg>
+					</div>
+					<h3 class="text-xl font-semibold text-gray-900 mb-2">分享連結</h3>
+					<p class="text-gray-600">生成分享連結，讓朋友也能看到您的拿手好菜</p>
+				</div>
+
+				<!-- 功能卡片 6 -->
+				<div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+					<div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-4">
+						<svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+						</svg>
+					</div>
+					<h3 class="text-xl font-semibold text-gray-900 mb-2">心得記錄</h3>
+					<p class="text-gray-600">記錄每次烹飪的心得和評分，持續改進料理技巧</p>
+				</div>
+			</div>
+		</div>
+
+		<!-- 快速導覽 -->
+		<div class="bg-white py-16">
+			<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+				<div class="text-center mb-12">
+					<h2 class="text-3xl font-bold text-gray-900 mb-4">開始使用</h2>
+					<p class="text-gray-600">選擇您想要的功能開始探索</p>
+				</div>
+				
+				<div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+					<a 
+						href="/recipes"
+						class="group bg-gray-50 rounded-lg p-6 text-center hover:bg-blue-50 hover:shadow-md transition-all"
+					>
+						<div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3 group-hover:bg-blue-200">
+							<svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+							</svg>
+						</div>
+						<h3 class="font-semibold text-gray-900 group-hover:text-blue-600">食譜列表</h3>
+						<p class="text-sm text-gray-600 mt-1">查看所有食譜</p>
+					</a>
+
+					<a 
+						href="/recipes/new"
+						class="group bg-gray-50 rounded-lg p-6 text-center hover:bg-green-50 hover:shadow-md transition-all"
+					>
+						<div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-3 group-hover:bg-green-200">
+							<svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+							</svg>
+						</div>
+						<h3 class="font-semibold text-gray-900 group-hover:text-green-600">新增食譜</h3>
+						<p class="text-sm text-gray-600 mt-1">記錄新料理</p>
+					</a>
+
+					<a 
+						href="/notes"
+						class="group bg-gray-50 rounded-lg p-6 text-center hover:bg-purple-50 hover:shadow-md transition-all"
+					>
+						<div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-3 group-hover:bg-purple-200">
+							<svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+							</svg>
+						</div>
+						<h3 class="font-semibold text-gray-900 group-hover:text-purple-600">心得記錄</h3>
+						<p class="text-sm text-gray-600 mt-1">查看烹飪心得</p>
+					</a>
+
+					<a 
+						href="/profile"
+						class="group bg-gray-50 rounded-lg p-6 text-center hover:bg-pink-50 hover:shadow-md transition-all"
+					>
+						<div class="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center mx-auto mb-3 group-hover:bg-pink-200">
+							<svg class="w-6 h-6 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+							</svg>
+						</div>
+						<h3 class="font-semibold text-gray-900 group-hover:text-pink-600">個人資料</h3>
+						<p class="text-sm text-gray-600 mt-1">管理帳戶設定</p>
+					</a>
+				</div>
+			</div>
+		</div>
 	</main>
 </Layout>

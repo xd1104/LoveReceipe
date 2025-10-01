@@ -1,16 +1,352 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import AuthPanel from "../components/AuthPanel.astro";
+import { ProfileService } from "../lib/services";
+
+// 取得使用者個人資料
+let profile = null;
+let stats = null;
+let error = null;
+
+try {
+  profile = await ProfileService.getProfile();
+  if (profile) {
+    stats = await ProfileService.getUserStats();
+  }
+} catch (err) {
+  console.error('取得個人資料失敗:', err);
+  error = err.message;
+}
 ---
+
 <Layout>
-    <main class="mx-auto max-w-3xl p-6">
-        <h1 class="text-2xl font-bold mb-4">個人化設定</h1>
-        <p class="text-gray-600 mb-6">此頁將提供頭像上傳與暱稱設定。</p>
-        <section class="mb-8">
-            <h2 class="text-lg font-semibold mb-2">登入</h2>
+    <main class="mx-auto max-w-4xl p-6">
+        <!-- 頁面標題 -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">個人化設定</h1>
+            <p class="text-gray-600">管理您的個人資料與偏好設定</p>
+        </div>
+
+        <!-- 登入狀態檢查 -->
+        <div id="auth-check" class="mb-8">
             <AuthPanel />
-        </section>
+        </div>
+
+        <!-- 個人化設定內容 -->
+        <div id="profile-content" class="hidden">
+            <!-- 統計資料卡片 -->
+            {stats && (
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                        <div class="flex items-center">
+                            <div class="p-2 bg-blue-100 rounded-lg">
+                                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-600">食譜總數</p>
+                                <p class="text-2xl font-semibold text-gray-900">{stats.recipeCount}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                        <div class="flex items-center">
+                            <div class="p-2 bg-green-100 rounded-lg">
+                                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                                </svg>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-600">心得總數</p>
+                                <p class="text-2xl font-semibold text-gray-900">{stats.noteCount}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                        <div class="flex items-center">
+                            <div class="p-2 bg-yellow-100 rounded-lg">
+                                <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                </svg>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-600">收藏食譜</p>
+                                <p class="text-2xl font-semibold text-gray-900">{stats.favoriteCount}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <!-- 個人資料設定 -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+                <h2 class="text-xl font-semibold text-gray-900 mb-6">個人資料</h2>
+                
+                <form id="profile-form" class="space-y-6">
+                    <!-- 頭像設定 -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            頭像
+                        </label>
+                        <div class="flex items-center space-x-4">
+                            <div class="relative">
+                                <img 
+                                    id="avatar-preview" 
+                                    src={profile?.avatar_url || '/default-avatar.png'} 
+                                    alt="頭像預覽"
+                                    class="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
+                                />
+                                <button 
+                                    type="button"
+                                    onclick="document.getElementById('avatar-upload').click()"
+                                    class="absolute -bottom-1 -right-1 bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-blue-700 transition-colors"
+                                >
+                                    +
+                                </button>
+                            </div>
+                            <div>
+                                <input 
+                                    type="file" 
+                                    id="avatar-upload" 
+                                    accept="image/*" 
+                                    class="hidden"
+                                />
+                                <button 
+                                    type="button"
+                                    onclick="document.getElementById('avatar-upload').click()"
+                                    class="px-4 py-2 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors"
+                                >
+                                    選擇頭像
+                                </button>
+                                <p class="text-xs text-gray-500 mt-1">支援 JPG、PNG 格式，建議 200x200 像素</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 暱稱設定 -->
+                    <div>
+                        <label for="nickname" class="block text-sm font-medium text-gray-700 mb-2">
+                            暱稱
+                        </label>
+                        <input 
+                            type="text" 
+                            id="nickname" 
+                            name="nickname"
+                            value={profile?.nickname || ''}
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="請輸入您的暱稱"
+                            maxlength="20"
+                        />
+                        <p class="text-xs text-gray-500 mt-1">最多 20 個字元</p>
+                    </div>
+
+                    <!-- 儲存按鈕 -->
+                    <div class="flex justify-end">
+                        <button 
+                            type="submit"
+                            id="save-profile-btn"
+                            class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            儲存設定
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 帳戶管理 -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-6">帳戶管理</h2>
+                
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between py-3 border-b border-gray-100">
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-900">登出</h3>
+                            <p class="text-sm text-gray-500">登出您的帳戶</p>
+                        </div>
+                        <button 
+                            id="logout-btn"
+                            class="px-4 py-2 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors"
+                        >
+                            登出
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 錯誤訊息 -->
+        {error && (
+            <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
+                <p>載入個人資料時發生錯誤：{error}</p>
+            </div>
+        )}
     </main>
 </Layout>
+
+<script>
+    class ProfileManager {
+        private profile: any = null;
+        private uploadedAvatarUrl: string | null = null;
+
+        constructor() {
+            this.init();
+        }
+
+        private async init() {
+            await this.loadProfile();
+            this.setupEventListeners();
+        }
+
+        private async loadProfile() {
+            try {
+                const response = await fetch('/api/profile');
+                if (response.ok) {
+                    const result = await response.json();
+                    this.profile = result.data;
+                    
+                    if (this.profile) {
+                        this.showProfileContent();
+                    }
+                }
+            } catch (error) {
+                console.error('載入個人資料失敗:', error);
+            }
+        }
+
+        private showProfileContent() {
+            const authCheck = document.getElementById('auth-check');
+            const profileContent = document.getElementById('profile-content');
+            
+            if (authCheck) authCheck.classList.add('hidden');
+            if (profileContent) profileContent.classList.remove('hidden');
+        }
+
+        private setupEventListeners() {
+            // 頭像上傳
+            const avatarUpload = document.getElementById('avatar-upload') as HTMLInputElement;
+            avatarUpload?.addEventListener('change', (e) => this.handleAvatarUpload(e));
+
+            // 表單提交
+            const profileForm = document.getElementById('profile-form') as HTMLFormElement;
+            profileForm?.addEventListener('submit', (e) => this.handleFormSubmit(e));
+
+            // 登出按鈕
+            const logoutBtn = document.getElementById('logout-btn');
+            logoutBtn?.addEventListener('click', () => this.handleLogout());
+        }
+
+        private async handleAvatarUpload(event: Event) {
+            const target = event.target as HTMLInputElement;
+            const file = target.files?.[0];
+            
+            if (!file) return;
+
+            // 驗證檔案類型
+            if (!file.type.startsWith('image/')) {
+                alert('請選擇圖片檔案');
+                return;
+            }
+
+            // 驗證檔案大小 (2MB)
+            if (file.size > 2 * 1024 * 1024) {
+                alert('圖片大小不能超過 2MB');
+                return;
+            }
+
+            try {
+                // 上傳圖片
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    this.uploadedAvatarUrl = result.url;
+                    
+                    // 更新預覽
+                    const preview = document.getElementById('avatar-preview') as HTMLImageElement;
+                    if (preview) {
+                        preview.src = result.url;
+                    }
+                } else {
+                    alert('頭像上傳失敗，請重試');
+                }
+            } catch (error) {
+                console.error('頭像上傳失敗:', error);
+                alert('頭像上傳時發生錯誤');
+            }
+        }
+
+        private async handleFormSubmit(event: Event) {
+            event.preventDefault();
+            
+            const form = event.target as HTMLFormElement;
+            const formData = new FormData(form);
+            const nickname = formData.get('nickname') as string;
+
+            if (!nickname.trim()) {
+                alert('請輸入暱稱');
+                return;
+            }
+
+            const saveBtn = document.getElementById('save-profile-btn') as HTMLButtonElement;
+            saveBtn.disabled = true;
+            saveBtn.textContent = '儲存中...';
+
+            try {
+                const response = await fetch('/api/profile', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        nickname: nickname.trim(),
+                        avatar_url: this.uploadedAvatarUrl || this.profile?.avatar_url
+                    })
+                });
+
+                if (response.ok) {
+                    alert('個人資料已更新');
+                    // 重新載入頁面以更新統計資料
+                    window.location.reload();
+                } else {
+                    const error = await response.json();
+                    alert('更新失敗：' + error.message);
+                }
+            } catch (error) {
+                console.error('更新個人資料失敗:', error);
+                alert('更新個人資料時發生錯誤');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = '儲存設定';
+            }
+        }
+
+        private async handleLogout() {
+            if (!confirm('確定要登出嗎？')) return;
+
+            try {
+                // 這裡需要實作登出邏輯
+                // 由於使用 Supabase，需要調用 supabase.auth.signOut()
+                alert('登出功能開發中...');
+            } catch (error) {
+                console.error('登出失敗:', error);
+                alert('登出時發生錯誤');
+            }
+        }
+    }
+
+    // 初始化
+    document.addEventListener('DOMContentLoaded', () => {
+        new ProfileManager();
+    });
+</script>
 
 

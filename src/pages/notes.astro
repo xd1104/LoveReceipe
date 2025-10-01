@@ -1,12 +1,403 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import NoteCard from "../components/NoteCard.astro";
+import { NoteService } from "../lib/services";
+
+// 取得使用者心得
+let notes = [];
+let error = null;
+
+try {
+  const result = await NoteService.getUserNotes();
+  notes = result.data || [];
+} catch (err) {
+  console.error('取得心得失敗:', err);
+  error = err.message;
+}
 ---
+
 <Layout>
-    <main class="mx-auto max-w-3xl p-6">
-        <h1 class="text-2xl font-bold mb-4">心得列表</h1>
-        <p class="text-gray-600">此頁將顯示使用者所有心得與評分。</p>
+    <main class="mx-auto max-w-4xl p-6">
+        <!-- 頁面標題 -->
+        <div class="flex items-center justify-between mb-6">
+            <h1 class="text-2xl font-bold text-gray-900">我的心得</h1>
+            <button 
+                onclick="showAddNoteModal()"
+                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+                新增心得
+            </button>
+        </div>
+
+        <!-- 錯誤訊息 -->
+        {error && (
+            <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
+                <p>載入心得時發生錯誤：{error}</p>
+            </div>
+        )}
+
+        <!-- 心得列表 -->
+        {notes.length === 0 ? (
+            <div class="text-center py-12">
+                <div class="text-gray-400 text-6xl mb-4">📝</div>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">還沒有心得</h3>
+                <p class="text-gray-500 mb-4">開始記錄您的烹飪心得吧！</p>
+                <button 
+                    onclick="showAddNoteModal()"
+                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                    新增第一則心得
+                </button>
+            </div>
+        ) : (
+            <div class="space-y-6">
+                {notes.map((note) => (
+                    <NoteCard note={note} editable={true} />
+                ))}
+            </div>
+        )}
+
+        <!-- 新增心得模態框 -->
+        <div id="addNoteModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+            <div class="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl font-bold">新增心得</h2>
+                        <button 
+                            onclick="hideAddNoteModal()"
+                            class="text-gray-400 hover:text-gray-600 text-2xl"
+                        >
+                            ×
+                        </button>
+                    </div>
+                    
+                    <!-- 食譜選擇 -->
+                    <div class="mb-4">
+                        <label for="recipeSelect" class="block text-sm font-medium text-gray-700 mb-2">
+                            選擇食譜 <span class="text-red-500">*</span>
+                        </label>
+                        <select 
+                            id="recipeSelect" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required
+                        >
+                            <option value="">請選擇食譜</option>
+                        </select>
+                    </div>
+
+                    <!-- 心得表單 -->
+                    <div id="noteFormContainer">
+                        <!-- 動態載入 NoteForm 元件 -->
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
 </Layout>
+
+<script>
+    // 顯示新增心得模態框
+    function showAddNoteModal() {
+        const modal = document.getElementById('addNoteModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        
+        // 載入食譜列表
+        loadRecipeOptions();
+    }
+
+    // 隱藏新增心得模態框
+    function hideAddNoteModal() {
+        const modal = document.getElementById('addNoteModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        
+        // 清空表單
+        const formContainer = document.getElementById('noteFormContainer');
+        formContainer.innerHTML = '';
+    }
+
+    // 載入食譜選項
+    async function loadRecipeOptions() {
+        try {
+            const response = await fetch('/api/recipes');
+            const result = await response.json();
+            
+            const select = document.getElementById('recipeSelect');
+            select.innerHTML = '<option value="">請選擇食譜</option>';
+            
+            if (result.data) {
+                result.data.forEach(recipe => {
+                    const option = document.createElement('option');
+                    option.value = recipe.id;
+                    option.textContent = recipe.title;
+                    select.appendChild(option);
+                });
+            }
+            
+            // 監聽食譜選擇變化
+            select.addEventListener('change', function() {
+                const recipeId = this.value;
+                if (recipeId) {
+                    loadNoteForm(recipeId);
+                } else {
+                    const formContainer = document.getElementById('noteFormContainer');
+                    formContainer.innerHTML = '';
+                }
+            });
+            
+        } catch (error) {
+            console.error('載入食譜失敗:', error);
+            alert('載入食譜列表失敗');
+        }
+    }
+
+    // 載入心得表單
+    async function loadNoteForm(recipeId) {
+        try {
+            const response = await fetch(`/api/recipes/${recipeId}`);
+            const recipe = await response.json();
+            
+            if (recipe) {
+                const formContainer = document.getElementById('noteFormContainer');
+                formContainer.innerHTML = `
+                    <div class="space-y-4">
+                        <!-- 評分 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                評分 <span class="text-red-500">*</span>
+                            </label>
+                            <div class="flex items-center space-x-2">
+                                ${[1, 2, 3, 4, 5].map(star => `
+                                    <button
+                                        type="button"
+                                        class="star-rating text-2xl text-gray-300 hover:text-yellow-400 focus:text-yellow-400 transition-colors"
+                                        data-rating="${star}"
+                                    >
+                                        ★
+                                    </button>
+                                `).join('')}
+                                <span id="ratingText" class="ml-2 text-sm text-gray-600">請選擇評分</span>
+                            </div>
+                            <input type="hidden" id="rating" name="rating" required />
+                        </div>
+
+                        <!-- 心得內容 -->
+                        <div>
+                            <label for="content" class="block text-sm font-medium text-gray-700 mb-2">
+                                心得內容 <span class="text-red-500">*</span>
+                            </label>
+                            <textarea
+                                id="content"
+                                name="content"
+                                rows="4"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="分享您對這道菜的心得..."
+                                required
+                            ></textarea>
+                        </div>
+
+                        <!-- 圖片上傳 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                心得圖片
+                            </label>
+                            <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                                <input
+                                    type="file"
+                                    id="imageUpload"
+                                    name="images"
+                                    multiple
+                                    accept="image/*"
+                                    class="hidden"
+                                />
+                                <button
+                                    type="button"
+                                    onclick="document.getElementById('imageUpload').click()"
+                                    class="text-blue-600 hover:text-blue-800 font-medium"
+                                >
+                                    點擊上傳圖片
+                                </button>
+                                <p class="text-sm text-gray-500 mt-1">
+                                    支援 JPG、PNG 格式，最多 5 張
+                                </p>
+                            </div>
+                            
+                            <div id="imagePreview" class="mt-4 grid grid-cols-2 md:grid-cols-3 gap-2">
+                                <!-- 動態生成的圖片預覽 -->
+                            </div>
+                        </div>
+
+                        <!-- 按鈕區域 -->
+                        <div class="flex justify-end space-x-3 pt-4">
+                            <button
+                                type="button"
+                                onclick="hideAddNoteModal()"
+                                class="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md"
+                            >
+                                取消
+                            </button>
+                            <button
+                                type="button"
+                                onclick="submitNote('${recipeId}')"
+                                class="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-md"
+                            >
+                                新增心得
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                // 初始化星級評分
+                initStarRating();
+                initImageUpload();
+            }
+        } catch (error) {
+            console.error('載入食譜詳情失敗:', error);
+            alert('載入食譜詳情失敗');
+        }
+    }
+
+    // 初始化星級評分
+    function initStarRating() {
+        let selectedRating = 0;
+        const starButtons = document.querySelectorAll('.star-rating');
+        const ratingInput = document.getElementById('rating');
+        const ratingText = document.getElementById('ratingText');
+
+        starButtons.forEach((button, index) => {
+            button.addEventListener('click', () => {
+                selectedRating = index + 1;
+                ratingInput.value = selectedRating.toString();
+                updateStarDisplay();
+            });
+        });
+
+        function updateStarDisplay() {
+            starButtons.forEach((button, index) => {
+                if (index < selectedRating) {
+                    button.classList.remove('text-gray-300');
+                    button.classList.add('text-yellow-400');
+                } else {
+                    button.classList.remove('text-yellow-400');
+                    button.classList.add('text-gray-300');
+                }
+            });
+            ratingText.textContent = selectedRating ? `${selectedRating} 星` : '請選擇評分';
+        }
+    }
+
+    // 初始化圖片上傳
+    function initImageUpload() {
+        const imageUpload = document.getElementById('imageUpload');
+        let uploadedImages = [];
+
+        imageUpload.addEventListener('change', async function(event) {
+            const files = event.target.files;
+            if (!files || files.length === 0) return;
+
+            if (files.length > 5) {
+                alert('最多只能上傳 5 張圖片');
+                return;
+            }
+
+            for (const file of Array.from(files)) {
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    
+                    const response = await fetch('/api/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (response.ok) {
+                        const result = await response.json();
+                        uploadedImages.push(result.url);
+                        displayImagePreview(result.url);
+                    }
+                } catch (error) {
+                    console.error('圖片上傳失敗:', error);
+                }
+            }
+
+            event.target.value = '';
+        });
+
+        function displayImagePreview(imageUrl) {
+            const preview = document.getElementById('imagePreview');
+            const imageDiv = document.createElement('div');
+            imageDiv.className = 'relative group';
+            imageDiv.innerHTML = `
+                <img src="${imageUrl}" alt="預覽圖片" class="w-full h-32 object-cover rounded-lg">
+                <button 
+                    type="button"
+                    onclick="removeImage('${imageUrl}')"
+                    class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                    ×
+                </button>
+            `;
+            preview.appendChild(imageDiv);
+        }
+
+        window.removeImage = function(imageUrl) {
+            uploadedImages = uploadedImages.filter(url => url !== imageUrl);
+            const preview = document.getElementById('imagePreview');
+            const imageDivs = preview.querySelectorAll('div');
+            imageDivs.forEach(div => {
+                if (div.innerHTML.includes(imageUrl)) {
+                    div.remove();
+                }
+            });
+        };
+
+        window.uploadedImages = uploadedImages;
+    }
+
+    // 提交心得
+    async function submitNote(recipeId) {
+        const content = document.getElementById('content').value.trim();
+        const rating = document.getElementById('rating').value;
+        const images = window.uploadedImages || [];
+
+        if (!content) {
+            alert('請輸入心得內容');
+            return;
+        }
+
+        if (!rating) {
+            alert('請選擇評分');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/notes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    recipe_id: recipeId,
+                    content: content,
+                    rating: parseInt(rating),
+                    images: images
+                })
+            });
+
+            if (response.ok) {
+                hideAddNoteModal();
+                window.location.reload();
+            } else {
+                const error = await response.json();
+                alert('新增心得失敗：' + error.message);
+            }
+        } catch (error) {
+            console.error('提交心得失敗:', error);
+            alert('提交心得時發生錯誤');
+        }
+    }
+</script>
 
 
 

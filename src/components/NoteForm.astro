@@ -1,0 +1,321 @@
+---
+export interface Props {
+  recipeId?: string;
+  note?: {
+    id: string;
+    content: string;
+    rating: number;
+    images: string[];
+  };
+  mode?: 'create' | 'edit';
+}
+const { recipeId, note, mode = 'create' } = Astro.props;
+---
+
+<div class="bg-white rounded-lg shadow-md p-6">
+  <h2 class="text-xl font-bold mb-4">
+    {mode === 'create' ? '新增心得' : '編輯心得'}
+  </h2>
+
+  <form id="noteForm" class="space-y-4">
+    {recipeId && (
+      <input type="hidden" id="recipeId" value={recipeId} />
+    )}
+    
+    {note && (
+      <input type="hidden" id="noteId" value={note.id} />
+    )}
+
+    <!-- 評分 -->
+    <div>
+      <label for="rating" class="block text-sm font-medium text-gray-700 mb-2">
+        評分 <span class="text-red-500">*</span>
+      </label>
+      <div class="flex items-center space-x-2">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            type="button"
+            class="star-rating text-2xl text-gray-300 hover:text-yellow-400 focus:text-yellow-400 transition-colors"
+            data-rating={star}
+          >
+            ★
+          </button>
+        ))}
+        <span id="ratingText" class="ml-2 text-sm text-gray-600">
+          {note?.rating ? `${note.rating} 星` : '請選擇評分'}
+        </span>
+      </div>
+      <input type="hidden" id="rating" name="rating" value={note?.rating || ''} required />
+    </div>
+
+    <!-- 心得內容 -->
+    <div>
+      <label for="content" class="block text-sm font-medium text-gray-700 mb-2">
+        心得內容 <span class="text-red-500">*</span>
+      </label>
+      <textarea
+        id="content"
+        name="content"
+        rows="4"
+        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        placeholder="分享您對這道菜的心得..."
+        required
+      >{note?.content || ''}</textarea>
+    </div>
+
+    <!-- 圖片上傳 -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-2">
+        心得圖片
+      </label>
+      <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+        <input
+          type="file"
+          id="imageUpload"
+          name="images"
+          multiple
+          accept="image/*"
+          class="hidden"
+        />
+        <button
+          type="button"
+          onclick="document.getElementById('imageUpload').click()"
+          class="text-blue-600 hover:text-blue-800 font-medium"
+        >
+          點擊上傳圖片
+        </button>
+        <p class="text-sm text-gray-500 mt-1">
+          支援 JPG、PNG 格式，最多 5 張
+        </p>
+      </div>
+      
+      <!-- 圖片預覽 -->
+      <div id="imagePreview" class="mt-4 grid grid-cols-2 md:grid-cols-3 gap-2">
+        <!-- 動態生成的圖片預覽 -->
+      </div>
+    </div>
+
+    <!-- 按鈕區域 -->
+    <div class="flex justify-end space-x-3 pt-4">
+      <button
+        type="button"
+        onclick="cancelNoteForm()"
+        class="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors"
+      >
+        取消
+      </button>
+      <button
+        type="submit"
+        class="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-md transition-colors"
+      >
+        {mode === 'create' ? '新增心得' : '更新心得'}
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+  let selectedRating = 0;
+  let uploadedImages: string[] = [];
+
+  // 初始化
+  document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('noteForm') as HTMLFormElement;
+    const ratingInput = document.getElementById('rating') as HTMLInputElement;
+    const ratingText = document.getElementById('ratingText') as HTMLSpanElement;
+    const starButtons = document.querySelectorAll('.star-rating');
+    const imageUpload = document.getElementById('imageUpload') as HTMLInputElement;
+
+    // 設定初始評分
+    if (ratingInput.value) {
+      selectedRating = parseInt(ratingInput.value);
+      updateStarDisplay();
+    }
+
+    // 星級評分事件
+    starButtons.forEach((button, index) => {
+      button.addEventListener('click', () => {
+        selectedRating = index + 1;
+        ratingInput.value = selectedRating.toString();
+        updateStarDisplay();
+      });
+    });
+
+    // 圖片上傳事件
+    imageUpload.addEventListener('change', handleImageUpload);
+
+    // 表單提交事件
+    form.addEventListener('submit', handleFormSubmit);
+  });
+
+  // 更新星級顯示
+  function updateStarDisplay() {
+    const starButtons = document.querySelectorAll('.star-rating');
+    const ratingText = document.getElementById('ratingText') as HTMLSpanElement;
+    
+    starButtons.forEach((button, index) => {
+      if (index < selectedRating) {
+        button.classList.remove('text-gray-300');
+        button.classList.add('text-yellow-400');
+      } else {
+        button.classList.remove('text-yellow-400');
+        button.classList.add('text-gray-300');
+      }
+    });
+    
+    ratingText.textContent = selectedRating ? `${selectedRating} 星` : '請選擇評分';
+  }
+
+  // 處理圖片上傳
+  async function handleImageUpload(event: Event) {
+    const target = event.target as HTMLInputElement;
+    const files = target.files;
+    
+    if (!files || files.length === 0) return;
+
+    // 限制上傳數量
+    if (files.length > 5) {
+      alert('最多只能上傳 5 張圖片');
+      return;
+    }
+
+    // 上傳圖片
+    for (const file of Array.from(files)) {
+      try {
+        const imageUrl = await uploadImage(file);
+        uploadedImages.push(imageUrl);
+        displayImagePreview(imageUrl);
+      } catch (error) {
+        console.error('圖片上傳失敗:', error);
+        alert('圖片上傳失敗，請重試');
+      }
+    }
+
+    // 清空 input
+    target.value = '';
+  }
+
+  // 上傳圖片到 Supabase Storage
+  async function uploadImage(file: File): Promise<string> {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData
+    });
+    
+    if (!response.ok) {
+      throw new Error('上傳失敗');
+    }
+    
+    const result = await response.json();
+    return result.url;
+  }
+
+  // 顯示圖片預覽
+  function displayImagePreview(imageUrl: string) {
+    const preview = document.getElementById('imagePreview') as HTMLDivElement;
+    
+    const imageDiv = document.createElement('div');
+    imageDiv.className = 'relative group';
+    imageDiv.innerHTML = `
+      <img src="${imageUrl}" alt="預覽圖片" class="w-full h-32 object-cover rounded-lg">
+      <button 
+        type="button"
+        onclick="removeImage('${imageUrl}')"
+        class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm opacity-0 group-hover:opacity-100 transition-opacity"
+      >
+        ×
+      </button>
+    `;
+    
+    preview.appendChild(imageDiv);
+  }
+
+  // 移除圖片
+  function removeImage(imageUrl: string) {
+    uploadedImages = uploadedImages.filter(url => url !== imageUrl);
+    
+    // 移除預覽
+    const preview = document.getElementById('imagePreview') as HTMLDivElement;
+    const imageDivs = preview.querySelectorAll('div');
+    imageDivs.forEach(div => {
+      if (div.innerHTML.includes(imageUrl)) {
+        div.remove();
+      }
+    });
+  }
+
+  // 處理表單提交
+  async function handleFormSubmit(event: Event) {
+    event.preventDefault();
+    
+    const form = event.target as HTMLFormElement;
+    const formData = new FormData(form);
+    
+    const noteData = {
+      content: formData.get('content') as string,
+      rating: parseInt(formData.get('rating') as string),
+      images: uploadedImages
+    };
+
+    // 驗證
+    if (!noteData.content.trim()) {
+      alert('請輸入心得內容');
+      return;
+    }
+
+    if (!noteData.rating || noteData.rating < 1 || noteData.rating > 5) {
+      alert('請選擇評分');
+      return;
+    }
+
+    try {
+      const recipeId = (document.getElementById('recipeId') as HTMLInputElement)?.value;
+      const noteId = (document.getElementById('noteId') as HTMLInputElement)?.value;
+      
+      let response;
+      if (noteId) {
+        // 更新心得
+        response = await fetch(`/api/notes/${noteId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(noteData)
+        });
+      } else {
+        // 新增心得
+        response = await fetch('/api/notes', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            recipe_id: recipeId,
+            ...noteData
+          })
+        });
+      }
+
+      if (response.ok) {
+        // 成功後重新載入頁面或關閉表單
+        window.location.reload();
+      } else {
+        const error = await response.json();
+        alert('操作失敗：' + error.message);
+      }
+    } catch (error) {
+      console.error('提交心得失敗:', error);
+      alert('提交心得時發生錯誤');
+    }
+  }
+
+  // 取消表單
+  function cancelNoteForm() {
+    if (confirm('確定要取消嗎？未儲存的內容將會遺失。')) {
+      window.history.back();
+    }
+  }
+</script>

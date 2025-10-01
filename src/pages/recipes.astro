@@ -1,12 +1,367 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import SearchFilter from "../components/SearchFilter.astro";
+import RecipeCard from "../components/RecipeCard.astro";
 ---
+
 <Layout>
-    <main class="mx-auto max-w-3xl p-6">
-        <h1 class="text-2xl font-bold mb-4">食譜列表</h1>
-        <p class="text-gray-600">此頁將顯示使用者的所有食譜。</p>
+    <main class="mx-auto max-w-6xl p-6">
+        <!-- 頁面標題與操作 -->
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">我的食譜</h1>
+                <p class="text-gray-600 mt-1">管理您的料理食譜與心得</p>
+            </div>
+            <a 
+                href="/recipes/new"
+                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+            >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                新增食譜
+            </a>
+        </div>
+        
+        <!-- 搜尋與篩選 -->
+        <SearchFilter />
+        
+        <!-- 食譜列表 -->
+        <div id="recipes-container">
+            <!-- 載入中狀態 -->
+            <div id="loading-state" class="text-center py-12">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <p class="text-gray-600 mt-2">載入中...</p>
+            </div>
+            
+            <!-- 空狀態 -->
+            <div id="empty-state" class="text-center py-12 hidden">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">還沒有食譜</h3>
+                <p class="mt-1 text-sm text-gray-500">開始建立您的第一個食譜吧！</p>
+                <div class="mt-6">
+                    <a 
+                        href="/recipes/new"
+                        class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                    >
+                        <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        新增食譜
+                    </a>
+                </div>
+            </div>
+            
+            <!-- 食譜網格 -->
+            <div id="recipes-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 hidden">
+                <!-- 食譜卡片會動態插入這裡 -->
+            </div>
+            
+            <!-- 載入更多按鈕 -->
+            <div id="load-more-container" class="text-center mt-8 hidden">
+                <button 
+                    id="load-more-btn"
+                    class="bg-white border border-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                    載入更多
+                </button>
+            </div>
+        </div>
     </main>
 </Layout>
+
+<script>
+  class RecipeList {
+    private recipes: any[] = [];
+    private currentPage = 1;
+    private hasMore = true;
+    private loading = false;
+    private filters = {
+      search: '',
+      status: '',
+      difficulty: '',
+      tags: []
+    };
+    
+    constructor() {
+      this.init();
+    }
+    
+    private async init() {
+      await this.loadRecipes();
+      this.setupEventListeners();
+    }
+    
+    private setupEventListeners() {
+      // 搜尋事件
+      window.addEventListener('search', (e: CustomEvent) => {
+        this.filters.search = e.detail.query;
+        this.resetAndLoad();
+      });
+      
+      // 狀態篩選
+      window.addEventListener('statusChange', (e: CustomEvent) => {
+        this.filters.status = e.detail.status;
+        this.resetAndLoad();
+      });
+      
+      // 難度篩選
+      window.addEventListener('difficultyChange', (e: CustomEvent) => {
+        this.filters.difficulty = e.detail.difficulty;
+        this.resetAndLoad();
+      });
+      
+      // 標籤篩選
+      window.addEventListener('tagToggle', (e: CustomEvent) => {
+        const tag = e.detail.tag;
+        const index = this.filters.tags.indexOf(tag);
+        if (index > -1) {
+          this.filters.tags.splice(index, 1);
+        } else {
+          this.filters.tags.push(tag);
+        }
+        this.resetAndLoad();
+      });
+      
+      // 清除篩選
+      window.addEventListener('clearFilters', () => {
+        this.filters = { search: '', status: '', difficulty: '', tags: [] };
+        this.resetAndLoad();
+      });
+      
+      // 載入更多
+      document.getElementById('load-more-btn')?.addEventListener('click', () => {
+        this.loadMore();
+      });
+    }
+    
+    private async loadRecipes() {
+      if (this.loading) return;
+      
+      this.loading = true;
+      this.showLoading();
+      
+      try {
+        // 這裡會連接到實際的 API
+        // 暫時使用模擬資料
+        const mockRecipes = this.getMockRecipes();
+        
+        if (this.currentPage === 1) {
+          this.recipes = mockRecipes;
+        } else {
+          this.recipes.push(...mockRecipes);
+        }
+        
+        this.renderRecipes();
+        this.hideLoading();
+        
+        // 檢查是否還有更多資料
+        this.hasMore = mockRecipes.length === 10; // 假設每頁 10 筆
+        
+      } catch (error) {
+        console.error('載入食譜失敗:', error);
+        this.showError('載入食譜失敗，請稍後再試');
+      } finally {
+        this.loading = false;
+      }
+    }
+    
+    private async loadMore() {
+      this.currentPage++;
+      await this.loadRecipes();
+    }
+    
+    private resetAndLoad() {
+      this.currentPage = 1;
+      this.recipes = [];
+      this.loadRecipes();
+    }
+    
+    private renderRecipes() {
+      const grid = document.getElementById('recipes-grid');
+      const emptyState = document.getElementById('empty-state');
+      const loadMoreContainer = document.getElementById('load-more-container');
+      
+      if (!grid || !emptyState || !loadMoreContainer) return;
+      
+      if (this.recipes.length === 0) {
+        grid.classList.add('hidden');
+        emptyState.classList.remove('hidden');
+        loadMoreContainer.classList.add('hidden');
+        return;
+      }
+      
+      emptyState.classList.add('hidden');
+      grid.classList.remove('hidden');
+      
+      // 清空現有內容
+      grid.innerHTML = '';
+      
+      // 渲染食譜卡片
+      this.recipes.forEach(recipe => {
+        const cardHtml = this.createRecipeCardHtml(recipe);
+        grid.insertAdjacentHTML('beforeend', cardHtml);
+      });
+      
+      // 顯示/隱藏載入更多按鈕
+      if (this.hasMore) {
+        loadMoreContainer.classList.remove('hidden');
+      } else {
+        loadMoreContainer.classList.add('hidden');
+      }
+    }
+    
+    private createRecipeCardHtml(recipe: any): string {
+      const difficultyLabels = { easy: '簡單', normal: '普通', hard: '困難' };
+      const statusLabels = { to_try: '想做', done: '做過', favorite: '最愛' };
+      const statusColors = { 
+        to_try: 'bg-yellow-100 text-yellow-800', 
+        done: 'bg-green-100 text-green-800', 
+        favorite: 'bg-pink-100 text-pink-800' 
+      };
+      
+      return `
+        <article class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+          ${recipe.cover_url ? `
+            <div class="aspect-video bg-gray-100">
+              <img src="${recipe.cover_url}" alt="${recipe.title}" class="w-full h-full object-cover" loading="lazy" />
+            </div>
+          ` : ''}
+          
+          <div class="p-4">
+            <div class="flex items-start justify-between mb-2">
+              <h3 class="text-lg font-semibold text-gray-900 line-clamp-2 flex-1">${recipe.title}</h3>
+              <span class="px-2 py-1 text-xs font-medium rounded-full ml-2 flex-shrink-0 ${statusColors[recipe.status]}">
+                ${statusLabels[recipe.status]}
+              </span>
+            </div>
+            
+            ${recipe.description ? `
+              <p class="text-gray-600 text-sm mb-3 line-clamp-2">${recipe.description}</p>
+            ` : ''}
+            
+            ${recipe.tags && recipe.tags.length > 0 ? `
+              <div class="flex flex-wrap gap-1 mb-3">
+                ${recipe.tags.slice(0, 3).map((tag: string) => `
+                  <span class="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">${tag}</span>
+                `).join('')}
+                ${recipe.tags.length > 3 ? `
+                  <span class="px-2 py-1 bg-gray-100 text-gray-500 text-xs rounded">+${recipe.tags.length - 3}</span>
+                ` : ''}
+              </div>
+            ` : ''}
+            
+            <div class="flex items-center justify-between text-sm text-gray-500 mb-3">
+              <div class="flex items-center gap-3">
+                <span class="flex items-center gap-1">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  ${recipe.minutes ? `${recipe.minutes}分鐘` : '未設定'}
+                </span>
+                <span class="flex items-center gap-1">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  ${recipe.servings ? `${recipe.servings}人份` : '未設定'}
+                </span>
+              </div>
+              <span class="text-xs">${difficultyLabels[recipe.difficulty]}</span>
+            </div>
+            
+            <div class="flex gap-2">
+              <a href="/recipes/${recipe.id}" class="flex-1 bg-blue-600 text-white text-center py-2 px-4 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors">
+                查看詳情
+              </a>
+              <button class="p-2 text-gray-400 hover:text-gray-600 transition-colors" title="編輯">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </article>
+      `;
+    }
+    
+    private getMockRecipes(): any[] {
+      return [
+        {
+          id: '1',
+          title: '番茄肉醬義大利麵',
+          description: '簡單入門款，酸甜好吃',
+          cover_url: null,
+          difficulty: 'easy',
+          minutes: 35,
+          servings: 2,
+          status: 'to_try',
+          tags: ['義大利麵', '家常菜'],
+          updated_at: '2024-01-15T10:30:00Z'
+        },
+        {
+          id: '2',
+          title: '紅燒肉',
+          description: '媽媽的拿手菜，肥而不膩',
+          cover_url: null,
+          difficulty: 'normal',
+          minutes: 90,
+          servings: 4,
+          status: 'done',
+          tags: ['中式', '豬肉', '下飯菜'],
+          updated_at: '2024-01-14T15:20:00Z'
+        },
+        {
+          id: '3',
+          title: '巧克力蛋糕',
+          description: '濃郁的巧克力香，生日必備',
+          cover_url: null,
+          difficulty: 'hard',
+          minutes: 120,
+          servings: 8,
+          status: 'favorite',
+          tags: ['甜點', '蛋糕', '巧克力'],
+          updated_at: '2024-01-13T09:15:00Z'
+        }
+      ];
+    }
+    
+    private showLoading() {
+      const loading = document.getElementById('loading-state');
+      const grid = document.getElementById('recipes-grid');
+      const emptyState = document.getElementById('empty-state');
+      
+      loading?.classList.remove('hidden');
+      grid?.classList.add('hidden');
+      emptyState?.classList.add('hidden');
+    }
+    
+    private hideLoading() {
+      const loading = document.getElementById('loading-state');
+      loading?.classList.add('hidden');
+    }
+    
+    private showError(message: string) {
+      // 簡單的錯誤顯示，可以後續改進
+      alert(message);
+    }
+  }
+  
+  // 初始化
+  document.addEventListener('DOMContentLoaded', () => {
+    new RecipeList();
+  });
+</script>
+
+<style>
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+</style>
 
 
 

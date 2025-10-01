@@ -3,11 +3,435 @@ export function getStaticPaths() { return []; }
 import Layout from "../../layouts/Layout.astro";
 const { id } = Astro.params;
 ---
+
 <Layout>
-    <main class="mx-auto max-w-3xl p-6">
-        <h1 class="text-2xl font-bold mb-4">食譜詳情</h1>
-        <p class="text-gray-600">目前查看的食譜 ID：{id}</p>
+    <main class="mx-auto max-w-4xl p-6">
+        <!-- 載入中狀態 -->
+        <div id="loading-state" class="text-center py-12">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <p class="text-gray-600 mt-2">載入中...</p>
+        </div>
+        
+        <!-- 食譜內容 -->
+        <div id="recipe-content" class="hidden">
+            <!-- 返回按鈕 -->
+            <div class="mb-6">
+                <a 
+                    href="/recipes"
+                    class="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+                >
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                    返回食譜列表
+                </a>
+            </div>
+            
+            <!-- 食譜標題與操作 -->
+            <div class="flex items-start justify-between mb-6">
+                <div class="flex-1">
+                    <h1 id="recipe-title" class="text-3xl font-bold text-gray-900 mb-2"></h1>
+                    <p id="recipe-description" class="text-gray-600"></p>
+                </div>
+                <div class="flex gap-2 ml-4">
+                    <button 
+                        id="edit-btn"
+                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        編輯
+                    </button>
+                    <button 
+                        id="share-btn"
+                        class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors flex items-center gap-2"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+                        </svg>
+                        分享
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 食譜資訊 -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                    <div class="flex items-center gap-2 text-gray-600 mb-1">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span class="text-sm font-medium">烹飪時間</span>
+                    </div>
+                    <p id="recipe-minutes" class="text-lg font-semibold text-gray-900"></p>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                    <div class="flex items-center gap-2 text-gray-600 mb-1">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        <span class="text-sm font-medium">份量</span>
+                    </div>
+                    <p id="recipe-servings" class="text-lg font-semibold text-gray-900"></p>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                    <div class="flex items-center gap-2 text-gray-600 mb-1">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span class="text-sm font-medium">難度</span>
+                    </div>
+                    <p id="recipe-difficulty" class="text-lg font-semibold text-gray-900"></p>
+                </div>
+            </div>
+            
+            <!-- 封面圖片 -->
+            <div id="recipe-cover" class="mb-8 hidden">
+                <img 
+                    id="cover-image"
+                    src=""
+                    alt=""
+                    class="w-full h-64 md:h-96 object-cover rounded-lg shadow-sm"
+                />
+            </div>
+            
+            <!-- 標籤 -->
+            <div id="recipe-tags" class="mb-8 hidden">
+                <h3 class="text-lg font-semibold text-gray-900 mb-3">標籤</h3>
+                <div id="tags-container" class="flex flex-wrap gap-2">
+                    <!-- 標籤會動態插入這裡 -->
+                </div>
+            </div>
+            
+            <!-- 食材 -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+                <h3 class="text-xl font-semibold text-gray-900 mb-4">食材</h3>
+                <div id="ingredients-list" class="space-y-2">
+                    <!-- 食材會動態插入這裡 -->
+                </div>
+            </div>
+            
+            <!-- 步驟 -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+                <h3 class="text-xl font-semibold text-gray-900 mb-4">烹飪步驟</h3>
+                <div id="steps-list" class="space-y-6">
+                    <!-- 步驟會動態插入這裡 -->
+                </div>
+            </div>
+            
+            <!-- 心得區域 -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-semibold text-gray-900">心得記錄</h3>
+                    <button 
+                        id="add-note-btn"
+                        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        新增心得
+                    </button>
+                </div>
+                <div id="notes-list" class="space-y-4">
+                    <!-- 心得會動態插入這裡 -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- 錯誤狀態 -->
+        <div id="error-state" class="text-center py-12 hidden">
+            <svg class="mx-auto h-12 w-12 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">載入失敗</h3>
+            <p class="mt-1 text-sm text-gray-500">無法載入食譜內容，請稍後再試</p>
+            <div class="mt-6">
+                <button 
+                    id="retry-btn"
+                    class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                >
+                    重試
+                </button>
+            </div>
+        </div>
     </main>
 </Layout>
 
-
+<script>
+  class RecipeDetail {
+    private recipeId: string;
+    private recipe: any = null;
+    
+    constructor() {
+      this.recipeId = window.location.pathname.split('/').pop() || '';
+      this.init();
+    }
+    
+    private async init() {
+      await this.loadRecipe();
+      this.setupEventListeners();
+    }
+    
+    private setupEventListeners() {
+      // 編輯按鈕
+      document.getElementById('edit-btn')?.addEventListener('click', () => {
+        window.location.href = `/recipes/${this.recipeId}/edit`;
+      });
+      
+      // 分享按鈕
+      document.getElementById('share-btn')?.addEventListener('click', () => {
+        this.handleShare();
+      });
+      
+      // 新增心得按鈕
+      document.getElementById('add-note-btn')?.addEventListener('click', () => {
+        this.showAddNoteForm();
+      });
+      
+      // 重試按鈕
+      document.getElementById('retry-btn')?.addEventListener('click', () => {
+        this.loadRecipe();
+      });
+    }
+    
+    private async loadRecipe() {
+      this.showLoading();
+      
+      try {
+        // 這裡會連接到實際的 API
+        // 暫時使用模擬資料
+        this.recipe = this.getMockRecipe();
+        
+        this.renderRecipe();
+        this.hideLoading();
+        
+      } catch (error) {
+        console.error('載入食譜失敗:', error);
+        this.showError();
+      }
+    }
+    
+    private renderRecipe() {
+      if (!this.recipe) return;
+      
+      // 基本資訊
+      document.getElementById('recipe-title')!.textContent = this.recipe.title;
+      document.getElementById('recipe-description')!.textContent = this.recipe.description || '';
+      document.getElementById('recipe-minutes')!.textContent = this.recipe.minutes ? `${this.recipe.minutes} 分鐘` : '未設定';
+      document.getElementById('recipe-servings')!.textContent = this.recipe.servings ? `${this.recipe.servings} 人份` : '未設定';
+      
+      const difficultyLabels = { easy: '簡單', normal: '普通', hard: '困難' };
+      document.getElementById('recipe-difficulty')!.textContent = difficultyLabels[this.recipe.difficulty];
+      
+      // 封面圖片
+      if (this.recipe.cover_url) {
+        const coverDiv = document.getElementById('recipe-cover');
+        const coverImg = document.getElementById('cover-image') as HTMLImageElement;
+        coverImg.src = this.recipe.cover_url;
+        coverImg.alt = this.recipe.title;
+        coverDiv?.classList.remove('hidden');
+      }
+      
+      // 標籤
+      if (this.recipe.tags && this.recipe.tags.length > 0) {
+        const tagsContainer = document.getElementById('tags-container');
+        tagsContainer!.innerHTML = this.recipe.tags.map((tag: string) => 
+          `<span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">${tag}</span>`
+        ).join('');
+        document.getElementById('recipe-tags')?.classList.remove('hidden');
+      }
+      
+      // 食材
+      this.renderIngredients();
+      
+      // 步驟
+      this.renderSteps();
+      
+      // 心得
+      this.renderNotes();
+      
+      // 顯示內容
+      document.getElementById('recipe-content')?.classList.remove('hidden');
+    }
+    
+    private renderIngredients() {
+      const container = document.getElementById('ingredients-list');
+      if (!container) return;
+      
+      if (!this.recipe.ingredients || this.recipe.ingredients.length === 0) {
+        container.innerHTML = '<p class="text-gray-500">尚未添加食材</p>';
+        return;
+      }
+      
+      container.innerHTML = this.recipe.ingredients.map((ingredient: any) => `
+        <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+          <div class="flex-1">
+            <span class="font-medium text-gray-900">${ingredient.name}</span>
+            ${ingredient.amount ? `<span class="text-gray-600 ml-2">${ingredient.amount}${ingredient.unit || ''}</span>` : ''}
+            ${ingredient.note ? `<span class="text-gray-500 text-sm ml-2">(${ingredient.note})</span>` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+    
+    private renderSteps() {
+      const container = document.getElementById('steps-list');
+      if (!container) return;
+      
+      if (!this.recipe.steps || this.recipe.steps.length === 0) {
+        container.innerHTML = '<p class="text-gray-500">尚未添加步驟</p>';
+        return;
+      }
+      
+      container.innerHTML = this.recipe.steps.map((step: any, index: number) => `
+        <div class="flex gap-4">
+          <div class="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-800 rounded-full flex items-center justify-center text-sm font-medium">
+            ${index + 1}
+          </div>
+          <div class="flex-1">
+            <p class="text-gray-900 leading-relaxed">${step.content}</p>
+            ${step.image_url ? `
+              <img src="${step.image_url}" alt="步驟 ${index + 1}" class="mt-3 rounded-lg shadow-sm max-w-md" />
+            ` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+    
+    private renderNotes() {
+      const container = document.getElementById('notes-list');
+      if (!container) return;
+      
+      if (!this.recipe.notes || this.recipe.notes.length === 0) {
+        container.innerHTML = '<p class="text-gray-500">還沒有心得記錄</p>';
+        return;
+      }
+      
+      container.innerHTML = this.recipe.notes.map((note: any) => `
+        <div class="border border-gray-200 rounded-lg p-4">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <div class="flex">
+                ${Array.from({ length: 5 }, (_, i) => `
+                  <svg class="w-4 h-4 ${i < note.rating ? 'text-yellow-400' : 'text-gray-300'}" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                `).join('')}
+              </div>
+              <span class="text-sm text-gray-500">${new Date(note.created_at).toLocaleDateString()}</span>
+            </div>
+          </div>
+          <p class="text-gray-900">${note.content}</p>
+          ${note.images && note.images.length > 0 ? `
+            <div class="mt-3 flex gap-2">
+              ${note.images.map((image: string) => `
+                <img src="${image}" alt="心得圖片" class="w-20 h-20 object-cover rounded-lg" />
+              `).join('')}
+            </div>
+          ` : ''}
+        </div>
+      `).join('');
+    }
+    
+    private getMockRecipe(): any {
+      return {
+        id: this.recipeId,
+        title: '番茄肉醬義大利麵',
+        description: '簡單入門款，酸甜好吃，適合初學者嘗試',
+        cover_url: null,
+        difficulty: 'easy',
+        minutes: 35,
+        servings: 2,
+        status: 'to_try',
+        tags: ['義大利麵', '家常菜', '簡單'],
+        ingredients: [
+          { name: '義大利麵', amount: '200', unit: 'g' },
+          { name: '絞肉', amount: '150', unit: 'g' },
+          { name: '番茄', amount: '2', unit: '顆' },
+          { name: '洋蔥', amount: '1/2', unit: '顆', note: '切丁' },
+          { name: '大蒜', amount: '2', unit: '瓣' },
+          { name: '橄欖油', amount: '2', unit: '大匙' },
+          { name: '鹽', amount: '適量', unit: '' },
+          { name: '黑胡椒', amount: '適量', unit: '' }
+        ],
+        steps: [
+          {
+            content: '煮一鍋水，水滾後加入鹽和義大利麵，按照包裝指示時間煮熟。',
+            image_url: null
+          },
+          {
+            content: '平底鍋加熱橄欖油，爆香大蒜和洋蔥丁至香味出來。',
+            image_url: null
+          },
+          {
+            content: '加入絞肉炒至變色，再加入切丁的番茄炒出汁水。',
+            image_url: null
+          },
+          {
+            content: '用鹽和黑胡椒調味，煮至醬汁濃稠。',
+            image_url: null
+          },
+          {
+            content: '將煮好的義大利麵加入醬汁中拌勻，即可盛盤享用。',
+            image_url: null
+          }
+        ],
+        notes: [
+          {
+            id: '1',
+            content: '番茄可以先用熱水燙過去皮，口感會更好。',
+            rating: 4,
+            images: [],
+            created_at: '2024-01-15T10:30:00Z'
+          }
+        ]
+      };
+    }
+    
+    private handleShare() {
+      // 實作分享功能
+      if (navigator.share) {
+        navigator.share({
+          title: this.recipe.title,
+          text: this.recipe.description,
+          url: window.location.href
+        });
+      } else {
+        // 複製連結到剪貼簿
+        navigator.clipboard.writeText(window.location.href).then(() => {
+          alert('連結已複製到剪貼簿');
+        });
+      }
+    }
+    
+    private showAddNoteForm() {
+      // 實作新增心得表單
+      alert('新增心得功能開發中...');
+    }
+    
+    private showLoading() {
+      document.getElementById('loading-state')?.classList.remove('hidden');
+      document.getElementById('recipe-content')?.classList.add('hidden');
+      document.getElementById('error-state')?.classList.add('hidden');
+    }
+    
+    private hideLoading() {
+      document.getElementById('loading-state')?.classList.add('hidden');
+    }
+    
+    private showError() {
+      document.getElementById('loading-state')?.classList.add('hidden');
+      document.getElementById('recipe-content')?.classList.add('hidden');
+      document.getElementById('error-state')?.classList.remove('hidden');
+    }
+  }
+  
+  // 初始化
+  document.addEventListener('DOMContentLoaded', () => {
+    new RecipeDetail();
+  });
+</script>

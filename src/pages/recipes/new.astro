@@ -1,0 +1,57 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import RecipeForm from "../../components/RecipeForm.astro";
+---
+
+<Layout>
+    <main class="mx-auto max-w-4xl p-6">
+        <!-- 頁面標題 -->
+        <div class="mb-6">
+            <h1 class="text-3xl font-bold text-gray-900">新增食譜</h1>
+            <p class="text-gray-600 mt-1">建立您的新食譜，記錄美好的料理時光</p>
+        </div>
+        
+        <!-- 食譜表單 -->
+        <RecipeForm />
+    </main>
+</Layout>
+
+<script>
+  // 處理表單提交
+  window.addEventListener('formSubmit', async (e: CustomEvent) => {
+    const data = e.detail;
+    
+    try {
+      // 顯示載入狀態
+      const submitBtn = document.querySelector('button[type="submit"]') as HTMLButtonElement;
+      const originalText = submitBtn.textContent;
+      submitBtn.disabled = true;
+      submitBtn.textContent = '建立中...';
+      
+      // 這裡會連接到實際的 API
+      console.log('新增食譜資料:', data);
+      
+      // 模擬 API 呼叫
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // 成功後跳轉到食譜列表
+      window.location.href = '/recipes';
+      
+    } catch (error) {
+      console.error('新增食譜失敗:', error);
+      alert('新增食譜失敗，請稍後再試');
+      
+      // 恢復按鈕狀態
+      const submitBtn = document.querySelector('button[type="submit"]') as HTMLButtonElement;
+      submitBtn.disabled = false;
+      submitBtn.textContent = '建立食譜';
+    }
+  });
+  
+  // 處理取消操作
+  window.addEventListener('formCancel', () => {
+    if (confirm('確定要取消嗎？未儲存的資料將會遺失。')) {
+      window.location.href = '/recipes';
+    }
+  });
+</script>

@@ -1,0 +1,186 @@
+---
+export interface Props {
+  searchQuery?: string;
+  selectedStatus?: string;
+  selectedDifficulty?: string;
+  selectedTags?: string[];
+  availableTags?: string[];
+  onSearch?: (query: string) => void;
+  onStatusChange?: (status: string) => void;
+  onDifficultyChange?: (difficulty: string) => void;
+  onTagToggle?: (tag: string) => void;
+  onClear?: () => void;
+}
+
+const {
+  searchQuery = '',
+  selectedStatus = '',
+  selectedDifficulty = '',
+  selectedTags = [],
+  availableTags = [],
+  onSearch,
+  onStatusChange,
+  onDifficultyChange,
+  onTagToggle,
+  onClear
+} = Astro.props;
+
+const statusOptions = [
+  { value: '', label: '全部狀態' },
+  { value: 'to_try', label: '想做' },
+  { value: 'done', label: '做過' },
+  { value: 'favorite', label: '最愛' }
+];
+
+const difficultyOptions = [
+  { value: '', label: '全部難度' },
+  { value: 'easy', label: '簡單' },
+  { value: 'normal', label: '普通' },
+  { value: 'hard', label: '困難' }
+];
+---
+
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+  <!-- 搜尋框 -->
+  <div class="mb-4">
+    <div class="relative">
+      <input
+        id="search-input"
+        type="text"
+        placeholder="搜尋食譜名稱、描述或標籤..."
+        value={searchQuery}
+        class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+      />
+      <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+        <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 篩選器 -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+    <!-- 狀態篩選 -->
+    <div>
+      <label for="status-filter" class="block text-sm font-medium text-gray-700 mb-1">
+        狀態
+      </label>
+      <select
+        id="status-filter"
+        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+      >
+        {statusOptions.map(option => (
+          <option value={option.value} selected={selectedStatus === option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </div>
+    
+    <!-- 難度篩選 -->
+    <div>
+      <label for="difficulty-filter" class="block text-sm font-medium text-gray-700 mb-1">
+        難度
+      </label>
+      <select
+        id="difficulty-filter"
+        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+      >
+        {difficultyOptions.map(option => (
+          <option value={option.value} selected={selectedDifficulty === option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </div>
+    
+    <!-- 清除按鈕 -->
+    <div class="flex items-end">
+      <button
+        id="clear-filters"
+        class="w-full px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+      >
+        清除篩選
+      </button>
+    </div>
+  </div>
+  
+  <!-- 標籤篩選 -->
+  {availableTags.length > 0 && (
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-2">
+        標籤
+      </label>
+      <div class="flex flex-wrap gap-2">
+        {availableTags.map(tag => (
+          <button
+            data-tag={tag}
+            class={`px-3 py-1 text-sm rounded-full border transition-colors ${
+              selectedTags.includes(tag)
+                ? 'bg-blue-100 text-blue-800 border-blue-300'
+                : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+            }`}
+          >
+            {tag}
+          </button>
+        ))}
+      </div>
+    </div>
+  )}
+</div>
+
+<script>
+  // 搜尋功能
+  const searchInput = document.getElementById('search-input');
+  const statusFilter = document.getElementById('status-filter');
+  const difficultyFilter = document.getElementById('difficulty-filter');
+  const clearButton = document.getElementById('clear-filters');
+  const tagButtons = document.querySelectorAll('[data-tag]');
+  
+  // 防抖動搜尋
+  let searchTimeout: number;
+  
+  searchInput?.addEventListener('input', (e) => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      const query = (e.target as HTMLInputElement).value.trim();
+      // 觸發搜尋事件
+      window.dispatchEvent(new CustomEvent('search', { detail: { query } }));
+    }, 300);
+  });
+  
+  // 狀態篩選
+  statusFilter?.addEventListener('change', (e) => {
+    const status = (e.target as HTMLSelectElement).value;
+    window.dispatchEvent(new CustomEvent('statusChange', { detail: { status } }));
+  });
+  
+  // 難度篩選
+  difficultyFilter?.addEventListener('change', (e) => {
+    const difficulty = (e.target as HTMLSelectElement).value;
+    window.dispatchEvent(new CustomEvent('difficultyChange', { detail: { difficulty } }));
+  });
+  
+  // 標籤篩選
+  tagButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      const tag = button.getAttribute('data-tag');
+      if (tag) {
+        window.dispatchEvent(new CustomEvent('tagToggle', { detail: { tag } }));
+      }
+    });
+  });
+  
+  // 清除篩選
+  clearButton?.addEventListener('click', () => {
+    searchInput.value = '';
+    statusFilter.value = '';
+    difficultyFilter.value = '';
+    tagButtons.forEach(button => {
+      button.classList.remove('bg-blue-100', 'text-blue-800', 'border-blue-300');
+      button.classList.add('bg-gray-100', 'text-gray-700', 'border-gray-300');
+    });
+    window.dispatchEvent(new CustomEvent('clearFilters'));
+  });
+</script>

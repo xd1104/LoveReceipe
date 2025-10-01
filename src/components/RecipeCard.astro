@@ -1,0 +1,136 @@
+---
+export interface Props {
+  recipe: {
+    id: string;
+    title: string;
+    description?: string;
+    cover_url?: string;
+    difficulty: 'easy' | 'normal' | 'hard';
+    minutes?: number;
+    servings?: number;
+    status: 'to_try' | 'done' | 'favorite';
+    tags?: string[];
+    updated_at: string;
+  };
+  showActions?: boolean;
+}
+
+const { recipe, showActions = true } = Astro.props;
+
+const difficultyLabels = {
+  easy: '簡單',
+  normal: '普通',
+  hard: '困難'
+};
+
+const statusLabels = {
+  to_try: '想做',
+  done: '做過',
+  favorite: '最愛'
+};
+
+const statusColors = {
+  to_try: 'bg-yellow-100 text-yellow-800',
+  done: 'bg-green-100 text-green-800',
+  favorite: 'bg-pink-100 text-pink-800'
+};
+---
+
+<article class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+  <!-- 封面圖片 -->
+  {recipe.cover_url && (
+    <div class="aspect-video bg-gray-100">
+      <img 
+        src={recipe.cover_url} 
+        alt={recipe.title}
+        class="w-full h-full object-cover"
+        loading="lazy"
+      />
+    </div>
+  )}
+  
+  <div class="p-4">
+    <!-- 標題與狀態 -->
+    <div class="flex items-start justify-between mb-2">
+      <h3 class="text-lg font-semibold text-gray-900 line-clamp-2 flex-1">
+        {recipe.title}
+      </h3>
+      <span class={`px-2 py-1 text-xs font-medium rounded-full ml-2 flex-shrink-0 ${statusColors[recipe.status]}`}>
+        {statusLabels[recipe.status]}
+      </span>
+    </div>
+    
+    <!-- 描述 -->
+    {recipe.description && (
+      <p class="text-gray-600 text-sm mb-3 line-clamp-2">
+        {recipe.description}
+      </p>
+    )}
+    
+    <!-- 標籤 -->
+    {recipe.tags && recipe.tags.length > 0 && (
+      <div class="flex flex-wrap gap-1 mb-3">
+        {recipe.tags.slice(0, 3).map(tag => (
+          <span class="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
+            {tag}
+          </span>
+        ))}
+        {recipe.tags.length > 3 && (
+          <span class="px-2 py-1 bg-gray-100 text-gray-500 text-xs rounded">
+            +{recipe.tags.length - 3}
+          </span>
+        )}
+      </div>
+    )}
+    
+    <!-- 資訊欄 -->
+    <div class="flex items-center justify-between text-sm text-gray-500 mb-3">
+      <div class="flex items-center gap-3">
+        <span class="flex items-center gap-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          {recipe.minutes ? `${recipe.minutes}分鐘` : '未設定'}
+        </span>
+        <span class="flex items-center gap-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+          {recipe.servings ? `${recipe.servings}人份` : '未設定'}
+        </span>
+      </div>
+      <span class="text-xs">
+        {difficultyLabels[recipe.difficulty]}
+      </span>
+    </div>
+    
+    <!-- 操作按鈕 -->
+    {showActions && (
+      <div class="flex gap-2">
+        <a 
+          href={`/recipes/${recipe.id}`}
+          class="flex-1 bg-blue-600 text-white text-center py-2 px-4 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
+        >
+          查看詳情
+        </a>
+        <button 
+          class="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+          title="編輯"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          </svg>
+        </button>
+      </div>
+    )}
+  </div>
+</article>
+
+<style>
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+</style>

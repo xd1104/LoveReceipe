@@ -1,0 +1,234 @@
+---
+export interface Props {
+  accept?: string;
+  multiple?: boolean;
+  maxSize?: number; // MB
+  onUpload?: (files: File[]) => void;
+  onError?: (error: string) => void;
+  className?: string;
+}
+
+const {
+  accept = 'image/*',
+  multiple = false,
+  maxSize = 5, // 5MB
+  onUpload,
+  onError,
+  className = ''
+} = Astro.props;
+---
+
+<div class={`image-upload-container ${className}`}>
+  <input
+    type="file"
+    id="image-upload"
+    accept={accept}
+    multiple={multiple}
+    class="hidden"
+  />
+  
+  <div
+    id="upload-area"
+    class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors cursor-pointer"
+  >
+    <div class="space-y-2">
+      <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      </svg>
+      <div class="text-sm text-gray-600">
+        <span class="font-medium text-blue-600 hover:text-blue-500">點擊上傳</span>
+        或拖拽圖片到這裡
+      </div>
+      <p class="text-xs text-gray-500">
+        支援 JPG、PNG、WebP 格式，最大 {maxSize}MB
+      </p>
+    </div>
+  </div>
+  
+  <!-- 預覽區域 -->
+  <div id="preview-container" class="mt-4 hidden">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <!-- 預覽圖片會動態插入這裡 -->
+    </div>
+  </div>
+  
+  <!-- 進度條 -->
+  <div id="progress-container" class="mt-4 hidden">
+    <div class="w-full bg-gray-200 rounded-full h-2">
+      <div id="progress-bar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+    </div>
+    <p id="progress-text" class="text-sm text-gray-600 mt-1">上傳中...</p>
+  </div>
+</div>
+
+<script>
+  class ImageUpload {
+    private input: HTMLInputElement;
+    private uploadArea: HTMLElement;
+    private previewContainer: HTMLElement;
+    private progressContainer: HTMLElement;
+    private progressBar: HTMLElement;
+    private progressText: HTMLElement;
+    private maxSize: number;
+    private multiple: boolean;
+    private onUpload?: (files: File[]) => void;
+    private onError?: (error: string) => void;
+    
+    constructor() {
+      this.input = document.getElementById('image-upload') as HTMLInputElement;
+      this.uploadArea = document.getElementById('upload-area') as HTMLElement;
+      this.previewContainer = document.getElementById('preview-container') as HTMLElement;
+      this.progressContainer = document.getElementById('progress-container') as HTMLElement;
+      this.progressBar = document.getElementById('progress-bar') as HTMLElement;
+      this.progressText = document.getElementById('progress-text') as HTMLElement;
+      this.maxSize = 5; // 從 props 取得
+      this.multiple = false; // 從 props 取得
+      
+      this.init();
+    }
+    
+    private init() {
+      // 點擊上傳區域觸發檔案選擇
+      this.uploadArea.addEventListener('click', () => {
+        this.input.click();
+      });
+      
+      // 檔案選擇事件
+      this.input.addEventListener('change', (e) => {
+        const files = Array.from((e.target as HTMLInputElement).files || []);
+        this.handleFiles(files);
+      });
+      
+      // 拖拽上傳
+      this.uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        this.uploadArea.classList.add('border-blue-400', 'bg-blue-50');
+      });
+      
+      this.uploadArea.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        this.uploadArea.classList.remove('border-blue-400', 'bg-blue-50');
+      });
+      
+      this.uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        this.uploadArea.classList.remove('border-blue-400', 'bg-blue-50');
+        
+        const files = Array.from(e.dataTransfer?.files || []);
+        this.handleFiles(files);
+      });
+    }
+    
+    private handleFiles(files: File[]) {
+      if (files.length === 0) return;
+      
+      // 驗證檔案
+      const validFiles: File[] = [];
+      const errors: string[] = [];
+      
+      files.forEach(file => {
+        // 檢查檔案類型
+        if (!file.type.startsWith('image/')) {
+          errors.push(`${file.name} 不是有效的圖片檔案`);
+          return;
+        }
+        
+        // 檢查檔案大小
+        if (file.size > this.maxSize * 1024 * 1024) {
+          errors.push(`${file.name} 超過 ${this.maxSize}MB 限制`);
+          return;
+        }
+        
+        validFiles.push(file);
+      });
+      
+      // 顯示錯誤
+      if (errors.length > 0) {
+        this.onError?.(errors.join('\n'));
+      }
+      
+      // 處理有效檔案
+      if (validFiles.length > 0) {
+        this.showPreview(validFiles);
+        this.onUpload?.(validFiles);
+      }
+    }
+    
+    private showPreview(files: File[]) {
+      this.previewContainer.classList.remove('hidden');
+      this.previewContainer.innerHTML = '';
+      
+      files.forEach((file, index) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = document.createElement('img');
+          img.src = e.target?.result as string;
+          img.className = 'w-full h-24 object-cover rounded-lg';
+          img.alt = file.name;
+          
+          const container = document.createElement('div');
+          container.className = 'relative group';
+          container.appendChild(img);
+          
+          // 刪除按鈕
+          const deleteBtn = document.createElement('button');
+          deleteBtn.className = 'absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity';
+          deleteBtn.innerHTML = '×';
+          deleteBtn.onclick = () => {
+            container.remove();
+            if (this.previewContainer.children.length === 0) {
+              this.previewContainer.classList.add('hidden');
+            }
+          };
+          container.appendChild(deleteBtn);
+          
+          this.previewContainer.appendChild(container);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+    
+    public showProgress(progress: number, text: string) {
+      this.progressContainer.classList.remove('hidden');
+      this.progressBar.style.width = `${progress}%`;
+      this.progressText.textContent = text;
+      
+      if (progress >= 100) {
+        setTimeout(() => {
+          this.progressContainer.classList.add('hidden');
+        }, 1000);
+      }
+    }
+    
+    public hideProgress() {
+      this.progressContainer.classList.add('hidden');
+    }
+    
+    public clear() {
+      this.input.value = '';
+      this.previewContainer.classList.add('hidden');
+      this.previewContainer.innerHTML = '';
+      this.hideProgress();
+    }
+  }
+  
+  // 初始化
+  document.addEventListener('DOMContentLoaded', () => {
+    new ImageUpload();
+  });
+</script>
+
+<style>
+  .image-upload-container {
+    width: 100%;
+  }
+  
+  #upload-area:hover {
+    border-color: #9ca3af;
+  }
+  
+  #upload-area.dragover {
+    border-color: #3b82f6;
+    background-color: #eff6ff;
+  }
+</style>

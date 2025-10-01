@@ -175,20 +175,35 @@
     }
 
     private async init() {
-      // 動態載入全域認證管理器
-      const { authManager, supabase } = await import('../lib/auth/AuthManager.ts');
-      
-      this.authManager = authManager;
-      this.supabase = supabase;
+      try {
+        // 動態載入全域認證管理器
+        const { authManager, supabase } = await import('../lib/auth/AuthManager.ts');
+        const { headerStateManager } = await import('../lib/auth/HeaderStateManager.ts');
+        
+        this.authManager = authManager;
+        this.supabase = supabase;
 
-      this.setupEventListeners();
-      this.updateDisplay();
-      this.handleAuthRedirect();
-      
-      // 監聽認證狀態變化
-      this.authManager.addListener((user: any, profile: any) => {
-        this.updateDisplay();
-      });
+        this.setupEventListeners();
+        this.handleAuthRedirect();
+        
+        // 確保認證已初始化後再更新顯示
+        await this.authManager.ensureInitialized();
+        await this.updateDisplay();
+        
+        // 註冊到 Header 狀態管理器
+        headerStateManager.registerUpdateCallback(() => {
+          this.updateDisplay();
+        });
+        
+        // 監聽認證狀態變化（備用）
+        this.authManager.addListener((user: any, profile: any) => {
+          this.updateDisplay();
+        });
+      } catch (error) {
+        console.error('Header 初始化失敗:', error);
+        // 即使初始化失敗也要顯示登入按鈕
+        this.showAuthSection();
+      }
     }
 
     private setupEventListeners() {
@@ -232,31 +247,69 @@
     }
 
     private async updateDisplay() {
-      const user = await this.authManager.getUser();
-      const profile = await this.authManager.getProfile();
+      try {
+        // 強制刷新認證狀態確保最新狀態
+        await this.authManager.refreshAuthState();
+        
+        const user = await this.authManager.getUser();
+        const profile = await this.authManager.getProfile();
 
-      if (user) {
-        this.showUserSection();
-        this.updateUserDisplay(user, profile);
-      } else {
+        console.log('Header 更新顯示:', { 
+          hasUser: !!user, 
+          userId: user?.id, 
+          hasProfile: !!profile,
+          profileNickname: profile?.nickname 
+        });
+
+        if (user) {
+          this.showUserSection();
+          this.updateUserDisplay(user, profile);
+        } else {
+          this.showAuthSection();
+        }
+      } catch (error) {
+        console.error('Header 更新顯示失敗:', error);
         this.showAuthSection();
       }
     }
 
     private updateUserDisplay(user: any, profile: any) {
-      const userName = document.getElementById('user-name');
-      const userAvatar = document.getElementById('user-avatar') as HTMLImageElement;
+      try {
+        const userName = document.getElementById('user-name');
+        const userAvatar = document.getElementById('user-avatar') as HTMLImageElement;
 
-      if (profile?.nickname) {
-        userName.textContent = profile.nickname;
-      } else {
-        userName.textContent = user?.email?.split('@')[0] || '使用者';
-      }
+        if (!userName || !userAvatar) {
+          console.error('找不到使用者顯示元素');
+          return;
+        }
 
-      if (profile?.avatar_url) {
-        userAvatar.src = profile.avatar_url;
-      } else {
-        userAvatar.src = '/default-avatar.svg';
+        // 更新使用者名稱
+        if (profile?.nickname) {
+          userName.textContent = profile.nickname;
+          console.log('更新使用者名稱:', profile.nickname);
+        } else {
+          const displayName = user?.email?.split('@')[0] || '使用者';
+          userName.textContent = displayName;
+          console.log('使用預設名稱:', displayName);
+        }
+
+        // 更新使用者頭像
+        if (profile?.avatar_url) {
+          userAvatar.src = profile.avatar_url;
+          console.log('更新使用者頭像:', profile.avatar_url);
+        } else {
+          userAvatar.src = '/default-avatar.svg';
+          console.log('使用預設頭像');
+        }
+
+        // 確保頭像載入成功
+        userAvatar.onerror = () => {
+          console.warn('頭像載入失敗，使用預設頭像');
+          userAvatar.src = '/default-avatar.svg';
+        };
+
+      } catch (error) {
+        console.error('更新使用者顯示失敗:', error);
       }
     }
 
@@ -397,7 +450,17 @@
   }
 
   // 初始化認證管理器
-  document.addEventListener('DOMContentLoaded', () => {
-    new HeaderAuthManager();
+  document.addEventListener('DOMContentLoaded', async () => {
+    const manager = new HeaderAuthManager();
+    
+    // 頁面載入後再次刷新狀態，確保顯示正確
+    setTimeout(async () => {
+      try {
+        const { headerStateManager } = await import('../lib/auth/HeaderStateManager.ts');
+        await headerStateManager.refreshHeaderState();
+      } catch (error) {
+        console.error('頁面載入後刷新 Header 狀態失敗:', error);
+      }
+    }, 1000);
   });
 </script>

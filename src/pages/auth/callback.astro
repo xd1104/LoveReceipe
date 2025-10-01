@@ -84,15 +84,16 @@ import { getFullPath } from "../../lib/utils/path";
       }
 
       // 繼續按鈕點擊事件
-      continueBtn?.addEventListener('click', () => {
+      continueBtn?.addEventListener('click', async () => {
         const returnUrl = sessionStorage.getItem('returnUrl') || '/LoveReceipe/';
-        window.location.href = returnUrl;
+        const { getClientNavigationUrl } = await import('../../lib/utils/client-path');
+        window.location.href = getClientNavigationUrl('/');
       });
 
       // 自動跳轉（2秒後）
-      setTimeout(() => {
-        const returnUrl = sessionStorage.getItem('returnUrl') || '/LoveReceipe/';
-        window.location.href = returnUrl;
+      setTimeout(async () => {
+        const { getClientNavigationUrl } = await import('../../lib/utils/client-path');
+        window.location.href = getClientNavigationUrl('/');
       }, 2000);
 
     } catch (error) {
@@ -107,7 +108,7 @@ import { getFullPath } from "../../lib/utils/path";
       // 更新按鈕文字
       if (continueBtn) {
         continueBtn.textContent = '返回首頁';
-        continueBtn.onclick = () => {
+        continueBtn.onclick = async () => {
           const { getClientNavigationUrl } = await import('../../lib/utils/client-path');
           window.location.href = getClientNavigationUrl('/');
         };

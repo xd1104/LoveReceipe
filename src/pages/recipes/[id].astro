@@ -204,6 +204,14 @@ const { id } = Astro.params;
       this.showLoading();
       
       try {
+        // 檢查認證狀態
+        const { supabase } = await import('../../lib/supabase');
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          throw new Error('請先登入才能查看食譜');
+        }
+        
         // 直接使用 RecipeService 載入食譜資料
         const { RecipeService } = await import('../../lib/services');
         this.recipe = await RecipeService.getRecipe(this.recipeId);

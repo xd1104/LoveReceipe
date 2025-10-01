@@ -475,6 +475,12 @@ let error = null;
         }
 
         try {
+            // 檢查登入狀態
+            const isLoggedIn = await checkAuthStatus();
+            if (!isLoggedIn) {
+                throw new Error('請先登入才能新增心得');
+            }
+            
             // 直接使用 NoteService 新增心得
             const { NoteService } = await import('../lib/services');
             await NoteService.createNote({

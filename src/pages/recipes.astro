@@ -145,6 +145,14 @@ import { getFullPath } from "../lib/utils/path";
       this.showLoading();
       
       try {
+        // 檢查認證狀態
+        const { supabase } = await import('../lib/supabase');
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          throw new Error('請先登入才能查看食譜');
+        }
+        
         // 連接到實際的 RecipeService
         const { RecipeService } = await import('../lib/services/RecipeService');
         const result = await RecipeService.getRecipes({
@@ -167,7 +175,8 @@ import { getFullPath } from "../lib/utils/path";
         
       } catch (error) {
         console.error('載入食譜失敗:', error);
-        this.showError('載入食譜失敗，請稍後再試');
+        console.error('錯誤詳情:', error.message);
+        this.showError(`載入食譜失敗: ${error.message}`);
       } finally {
         this.loading = false;
       }

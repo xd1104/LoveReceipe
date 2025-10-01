@@ -29,6 +29,14 @@ import { getFullPath } from "../../lib/utils/path";
       submitBtn.disabled = true;
       submitBtn.textContent = '建立中...';
       
+      // 檢查認證狀態
+      const { supabase } = await import('../../lib/supabase');
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('請先登入才能新增食譜');
+      }
+      
       // 連接到實際的 RecipeService
       console.log('新增食譜資料:', data);
       

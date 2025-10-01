@@ -62,6 +62,12 @@ export class RecipeService {
    */
   static async getRecipes(filters: RecipeFilters = {}): Promise<{ data: Recipe[]; hasMore: boolean }> {
     try {
+      // 檢查使用者認證狀態
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('請先登入');
+      }
+
       let query = supabase
         .from('recipes')
         .select(`
@@ -70,6 +76,7 @@ export class RecipeService {
           recipe_steps(*),
           recipe_tags(tags(name))
         `)
+        .eq('owner_id', user.id)
         .order('updated_at', { ascending: false });
 
       // 搜尋條件

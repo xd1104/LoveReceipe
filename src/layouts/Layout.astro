@@ -8,10 +8,23 @@ import "../styles/global.css";
         <meta name="viewport" content="width=device-width" />
         <link rel="icon" type="image/svg+xml" href="favicon.svg" />
         <meta name="generator" content={Astro.generator} />
+        <meta name="description" content="記錄美好的料理時光，與摯愛分享每一道美味" />
+        
+        <!-- 快取控制 -->
+        <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+        <meta http-equiv="Pragma" content="no-cache" />
+        <meta http-equiv="Expires" content="0" />
+        
+        <!-- 版本控制 -->
+        <meta name="version" content="1.0.0" />
+        
         <title>我們的食譜本</title>
     </head>
     <body class="min-h-dvh bg-white text-gray-900">
         <slot />
+        
+        <!-- 版本檢查腳本 -->
+        <script src="/version-check.js"></script>
     </body>
 </html>
 

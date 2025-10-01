@@ -7,6 +7,7 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   site: 'https://xd1104.github.io/LoveReceipe',
   base: '/LoveReceipe/',
+  output: 'static',
   vite: {
     plugins: [tailwindcss()],
     define: {

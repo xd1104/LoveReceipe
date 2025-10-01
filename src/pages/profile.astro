@@ -202,14 +202,12 @@ try {
 
         private async loadProfile() {
             try {
-                const response = await fetch('/api/profile');
-                if (response.ok) {
-                    const result = await response.json();
-                    this.profile = result.data;
-                    
-                    if (this.profile) {
-                        this.showProfileContent();
-                    }
+                // 直接使用 ProfileService 取得個人資料
+                const { ProfileService } = await import('../lib/services');
+                this.profile = await ProfileService.getProfile();
+                
+                if (this.profile) {
+                    this.showProfileContent();
                 }
             } catch (error) {
                 console.error('載入個人資料失敗:', error);
@@ -257,26 +255,15 @@ try {
             }
 
             try {
-                // 上傳圖片
-                const formData = new FormData();
-                formData.append('file', file);
+                // 直接使用 ImageService 上傳圖片
+                const { ImageService } = await import('../lib/services');
+                const result = await ImageService.uploadImage(file);
+                this.uploadedAvatarUrl = result.url;
                 
-                const response = await fetch('/api/upload', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                if (response.ok) {
-                    const result = await response.json();
-                    this.uploadedAvatarUrl = result.url;
-                    
-                    // 更新預覽
-                    const preview = document.getElementById('avatar-preview') as HTMLImageElement;
-                    if (preview) {
-                        preview.src = result.url;
-                    }
-                } else {
-                    alert('頭像上傳失敗，請重試');
+                // 更新預覽
+                const preview = document.getElementById('avatar-preview') as HTMLImageElement;
+                if (preview) {
+                    preview.src = result.url;
                 }
             } catch (error) {
                 console.error('頭像上傳失敗:', error);
@@ -301,25 +288,16 @@ try {
             saveBtn.textContent = '儲存中...';
 
             try {
-                const response = await fetch('/api/profile', {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        nickname: nickname.trim(),
-                        avatar_url: this.uploadedAvatarUrl || this.profile?.avatar_url
-                    })
+                // 直接使用 ProfileService 更新個人資料
+                const { ProfileService } = await import('../lib/services');
+                await ProfileService.upsertProfile({
+                    nickname: nickname.trim(),
+                    avatar_url: this.uploadedAvatarUrl || this.profile?.avatar_url
                 });
 
-                if (response.ok) {
-                    alert('個人資料已更新');
-                    // 重新載入頁面以更新統計資料
-                    window.location.reload();
-                } else {
-                    const error = await response.json();
-                    alert('更新失敗：' + error.message);
-                }
+                alert('個人資料已更新');
+                // 重新載入頁面以更新統計資料
+                window.location.reload();
             } catch (error) {
                 console.error('更新個人資料失敗:', error);
                 alert('更新個人資料時發生錯誤');

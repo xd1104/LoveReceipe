@@ -202,14 +202,13 @@ const { id } = Astro.params;
       this.showLoading();
       
       try {
-        // 載入食譜資料
-        const response = await fetch(`/api/recipes/${this.recipeId}`);
-        if (!response.ok) {
+        // 直接使用 RecipeService 載入食譜資料
+        const { RecipeService } = await import('../../lib/services');
+        this.recipe = await RecipeService.getRecipe(this.recipeId);
+        
+        if (!this.recipe) {
           throw new Error('食譜不存在或載入失敗');
         }
-        
-        const result = await response.json();
-        this.recipe = result.data;
         
         // 載入心得資料
         await this.loadNotes();
@@ -225,11 +224,10 @@ const { id } = Astro.params;
     
     private async loadNotes() {
       try {
-        const response = await fetch(`/api/notes?recipe_id=${this.recipeId}`);
-        if (response.ok) {
-          const result = await response.json();
-          this.recipe.notes = result.data || [];
-        }
+        // 直接使用 NoteService 載入心得資料
+        const { NoteService } = await import('../../lib/services');
+        const result = await NoteService.getNotes({ recipe_id: this.recipeId });
+        this.recipe.notes = result.data || [];
       } catch (error) {
         console.error('載入心得失敗:', error);
         this.recipe.notes = [];
@@ -585,19 +583,11 @@ const { id } = Astro.params;
 
         for (const file of Array.from(files)) {
           try {
-            const formData = new FormData();
-            formData.append('file', file);
-            
-            const response = await fetch('/api/upload', {
-              method: 'POST',
-              body: formData
-            });
-            
-            if (response.ok) {
-              const result = await response.json();
-              uploadedImages.push(result.url);
-              displayImagePreview(result.url);
-            }
+            // 直接使用 ImageService 上傳圖片
+            const { ImageService } = await import('../../lib/services');
+            const result = await ImageService.uploadImage(file);
+            uploadedImages.push(result.url);
+            displayImagePreview(result.url);
           } catch (error) {
             console.error('圖片上傳失敗:', error);
           }
@@ -653,28 +643,19 @@ const { id } = Astro.params;
       }
 
       try {
-        const response = await fetch('/api/notes', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            recipe_id: recipeId,
-            content: content,
-            rating: parseInt(rating),
-            images: images
-          })
+        // 直接使用 NoteService 新增心得
+        const { NoteService } = await import('../../lib/services');
+        await NoteService.createNote({
+          recipe_id: recipeId,
+          content: content,
+          rating: parseInt(rating),
+          images: images
         });
 
-        if (response.ok) {
-          // 關閉模態框並重新載入心得
-          document.querySelector('.fixed')?.remove();
-          await this.loadNotes();
-          this.renderNotes();
-        } else {
-          const error = await response.json();
-          alert('新增心得失敗：' + error.message);
-        }
+        // 關閉模態框並重新載入心得
+        document.querySelector('.fixed')?.remove();
+        await this.loadNotes();
+        this.renderNotes();
       } catch (error) {
         console.error('提交心得失敗:', error);
         alert('提交心得時發生錯誤');

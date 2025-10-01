@@ -1,18 +1,10 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import NoteCard from "../components/NoteCard.astro";
-import { NoteService } from "../lib/services";
 
-// 取得使用者心得
+// 不在伺服器端載入資料，改為客戶端載入
 let notes = [];
 let error = null;
-
-try {
-  notes = await NoteService.getUserNotes();
-} catch (err) {
-  console.error('取得心得失敗:', err);
-  error = err.message;
-}
 ---
 
 <Layout>
@@ -35,26 +27,42 @@ try {
             </div>
         )}
 
+        <!-- 載入狀態 -->
+        <div id="loading-state" class="text-center py-12">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <p class="text-gray-600 mt-2">載入中...</p>
+        </div>
+
+        <!-- 錯誤狀態 -->
+        <div id="error-state" class="hidden text-center py-12">
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                <p class="text-red-600" id="error-message">載入心得時發生錯誤</p>
+            </div>
+            <button 
+                onclick="loadNotes()"
+                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+                重新載入
+            </button>
+        </div>
+
+        <!-- 空狀態 -->
+        <div id="empty-state" class="hidden text-center py-12">
+            <div class="text-gray-400 text-6xl mb-4">📝</div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">還沒有心得</h3>
+            <p class="text-gray-500 mb-4">開始記錄您的烹飪心得吧！</p>
+            <button 
+                onclick="showAddNoteModal()"
+                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+                新增第一則心得
+            </button>
+        </div>
+
         <!-- 心得列表 -->
-        {notes.length === 0 ? (
-            <div class="text-center py-12">
-                <div class="text-gray-400 text-6xl mb-4">📝</div>
-                <h3 class="text-lg font-medium text-gray-900 mb-2">還沒有心得</h3>
-                <p class="text-gray-500 mb-4">開始記錄您的烹飪心得吧！</p>
-                <button 
-                    onclick="showAddNoteModal()"
-                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                    新增第一則心得
-                </button>
-            </div>
-        ) : (
-            <div class="space-y-6">
-                {notes.map((note) => (
-                    <NoteCard note={note} editable={true} />
-                ))}
-            </div>
-        )}
+        <div id="notes-list" class="hidden space-y-6">
+            <!-- 心得會動態載入到這裡 -->
+        </div>
 
         <!-- 新增心得模態框 -->
         <div id="addNoteModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
@@ -104,6 +112,88 @@ try {
             console.error('檢查登入狀態失敗:', error);
             return false;
         }
+    }
+
+    // 載入心得資料
+    async function loadNotes() {
+        const loadingState = document.getElementById('loading-state');
+        const errorState = document.getElementById('error-state');
+        const emptyState = document.getElementById('empty-state');
+        const notesList = document.getElementById('notes-list');
+        const errorMessage = document.getElementById('error-message');
+
+        // 顯示載入狀態
+        loadingState?.classList.remove('hidden');
+        errorState?.classList.add('hidden');
+        emptyState?.classList.add('hidden');
+        notesList?.classList.add('hidden');
+
+        try {
+            // 檢查登入狀態
+            const isLoggedIn = await checkAuthStatus();
+            if (!isLoggedIn) {
+                throw new Error('請先登入');
+            }
+
+            // 載入心得資料
+            const { NoteService } = await import('../lib/services');
+            const notes = await NoteService.getUserNotes();
+
+            // 隱藏載入狀態
+            loadingState?.classList.add('hidden');
+
+            if (notes.length === 0) {
+                // 顯示空狀態
+                emptyState?.classList.remove('hidden');
+            } else {
+                // 顯示心得列表
+                notesList?.classList.remove('hidden');
+                renderNotes(notes);
+            }
+        } catch (error) {
+            console.error('載入心得失敗:', error);
+            
+            // 隱藏載入狀態
+            loadingState?.classList.add('hidden');
+            
+            // 顯示錯誤狀態
+            errorState?.classList.remove('hidden');
+            if (errorMessage) {
+                errorMessage.textContent = `載入心得時發生錯誤：${error.message}`;
+            }
+        }
+    }
+
+    // 渲染心得列表
+    function renderNotes(notes) {
+        const notesList = document.getElementById('notes-list');
+        if (!notesList) return;
+
+        notesList.innerHTML = notes.map(note => `
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex-1">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">${note.recipe?.title || '未知食譜'}</h3>
+                        <div class="flex items-center space-x-4 text-sm text-gray-500">
+                            <span>評分：${'★'.repeat(note.rating)}${'☆'.repeat(5 - note.rating)}</span>
+                            <span>${new Date(note.created_at).toLocaleDateString()}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-gray-700 mb-4">
+                    ${note.content}
+                </div>
+                
+                ${note.images && note.images.length > 0 ? `
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
+                        ${note.images.map(img => `
+                            <img src="${img}" alt="心得圖片" class="w-full h-24 object-cover rounded-lg">
+                        `).join('')}
+                    </div>
+                ` : ''}
+            </div>
+        `).join('');
     }
 
     // 顯示新增心得模態框
@@ -401,6 +491,11 @@ try {
             alert('提交心得時發生錯誤');
         }
     }
+
+    // 頁面載入時自動載入心得
+    document.addEventListener('DOMContentLoaded', () => {
+        loadNotes();
+    });
 </script>
 
 

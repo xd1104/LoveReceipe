@@ -161,7 +161,7 @@ import { getFullPath } from "../lib/utils/path";
         console.log('使用者已登入:', session.user.email);
         
         // 連接到實際的 RecipeService
-        const { RecipeService } = await import('../lib/services/RecipeService');
+        const { RecipeService } = await import('../lib/services');
         const result = await RecipeService.getRecipes({
           page: this.currentPage,
           limit: 10,

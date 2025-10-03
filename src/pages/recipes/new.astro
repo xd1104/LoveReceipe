@@ -45,7 +45,7 @@ import { getFullPath } from "../../lib/utils/path";
       // 連接到實際的 RecipeService
       console.log('新增食譜資料:', data);
       
-      const { RecipeService } = await import('../../lib/services/RecipeService');
+      const { RecipeService } = await import('../../lib/services');
       const newRecipe = await RecipeService.createRecipe(data);
       
       console.log('食譜建立成功:', newRecipe);

@@ -284,6 +284,8 @@ import { getFullPath } from '../lib/utils/path';
           return;
         }
 
+        console.log('更新使用者顯示:', { user: user?.email, profile: profile?.nickname });
+
         // 更新使用者名稱
         if (profile?.nickname) {
           userName.textContent = profile.nickname;
@@ -300,15 +302,24 @@ import { getFullPath } from '../lib/utils/path';
           console.log('更新使用者頭像:', profile.avatar_url);
         } else {
           const { getClientFullPath } = await import('../lib/utils/client-path');
-          userAvatar.src = getClientFullPath('/default-avatar.svg');
-          console.log('使用預設頭像');
+          const defaultAvatarPath = getClientFullPath('/default-avatar.svg');
+          userAvatar.src = defaultAvatarPath;
+          console.log('使用預設頭像，路徑:', defaultAvatarPath);
         }
 
         // 確保頭像載入成功
         userAvatar.onerror = async () => {
           console.warn('頭像載入失敗，使用預設頭像');
-          const { getClientFullPath } = await import('../lib/utils/client-path');
-          userAvatar.src = getClientFullPath('/default-avatar.svg');
+          try {
+            const { getClientFullPath } = await import('../lib/utils/client-path');
+            const fallbackPath = getClientFullPath('/default-avatar.svg');
+            console.log('設定預設頭像路徑:', fallbackPath);
+            userAvatar.src = fallbackPath;
+          } catch (error) {
+            console.error('載入預設頭像失敗:', error);
+            // 使用絕對路徑作為最後手段
+            userAvatar.src = '/LoveReceipe/default-avatar.svg';
+          }
         };
 
       } catch (error) {

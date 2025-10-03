@@ -49,7 +49,7 @@ import { getFullPath } from '../lib/utils/path';
           <div class="flex items-center space-x-2">
             <img 
               id="user-avatar" 
-              src="/default-avatar.svg" 
+              src={getFullPath('/default-avatar.svg')} 
               alt="使用者頭像"
               class="w-8 h-8 rounded-full object-cover"
             />
@@ -73,7 +73,7 @@ import { getFullPath } from '../lib/utils/path';
               class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200"
             >
               <a 
-                href="/LoveReceipe/profile" 
+                href={getFullPath('/profile')} 
                 class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
               >
                 個人設定
@@ -105,13 +105,13 @@ import { getFullPath } from '../lib/utils/path';
     <!-- 手機版選單 -->
     <div id="mobile-menu" class="hidden md:hidden border-t border-gray-200 py-4">
       <div class="space-y-2">
-        <a href="/LoveReceipe/" class="block px-3 py-2 text-gray-700 hover:text-blue-600 rounded-md text-base font-medium">
+        <a href={getFullPath('/')} class="block px-3 py-2 text-gray-700 hover:text-blue-600 rounded-md text-base font-medium">
           首頁
         </a>
-        <a href="/LoveReceipe/recipes" class="block px-3 py-2 text-gray-700 hover:text-blue-600 rounded-md text-base font-medium">
+        <a href={getFullPath('/recipes')} class="block px-3 py-2 text-gray-700 hover:text-blue-600 rounded-md text-base font-medium">
           食譜
         </a>
-        <a href="/LoveReceipe/notes" class="block px-3 py-2 text-gray-700 hover:text-blue-600 rounded-md text-base font-medium">
+        <a href={getFullPath('/notes')} class="block px-3 py-2 text-gray-700 hover:text-blue-600 rounded-md text-base font-medium">
           心得
         </a>
       </div>
@@ -264,7 +264,7 @@ import { getFullPath } from '../lib/utils/path';
 
         if (user) {
           this.showUserSection();
-          this.updateUserDisplay(user, profile);
+          await this.updateUserDisplay(user, profile);
         } else {
           this.showAuthSection();
         }
@@ -274,7 +274,7 @@ import { getFullPath } from '../lib/utils/path';
       }
     }
 
-    private updateUserDisplay(user: any, profile: any) {
+    private async updateUserDisplay(user: any, profile: any) {
       try {
         const userName = document.getElementById('user-name');
         const userAvatar = document.getElementById('user-avatar') as HTMLImageElement;
@@ -299,14 +299,16 @@ import { getFullPath } from '../lib/utils/path';
           userAvatar.src = profile.avatar_url;
           console.log('更新使用者頭像:', profile.avatar_url);
         } else {
-          userAvatar.src = '/default-avatar.svg';
+          const { getClientFullPath } = await import('../lib/utils/client-path');
+          userAvatar.src = getClientFullPath('/default-avatar.svg');
           console.log('使用預設頭像');
         }
 
         // 確保頭像載入成功
-        userAvatar.onerror = () => {
+        userAvatar.onerror = async () => {
           console.warn('頭像載入失敗，使用預設頭像');
-          userAvatar.src = '/default-avatar.svg';
+          const { getClientFullPath } = await import('../lib/utils/client-path');
+          userAvatar.src = getClientFullPath('/default-avatar.svg');
         };
 
       } catch (error) {

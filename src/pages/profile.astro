@@ -1,5 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import { getFullPath } from "../lib/utils/path";
 
 // 不在伺服器端載入資料，改為客戶端載入
 let profile = null;
@@ -78,7 +79,7 @@ let error = null;
                             <div class="relative">
                                 <img 
                                     id="avatar-preview" 
-                                    src={profile?.avatar_url || '/default-avatar.svg'} 
+                                    src={profile?.avatar_url || getFullPath('/default-avatar.svg')} 
                                     alt="頭像預覽"
                                     class="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
                                 />
@@ -209,7 +210,7 @@ let error = null;
                 if (profileContent) profileContent.classList.remove('hidden');
                 
                 // 更新表單資料
-                this.updateForm();
+                await this.updateForm();
                 this.renderStats(stats);
             } catch (error) {
                 console.error('載入個人資料失敗:', error);
@@ -225,7 +226,7 @@ let error = null;
             }
         }
 
-        private updateForm() {
+        private async updateForm() {
             if (!this.profile) return;
 
             // 更新暱稱
@@ -237,7 +238,12 @@ let error = null;
             // 更新頭像
             const avatarPreview = document.getElementById('avatar-preview') as HTMLImageElement;
             if (avatarPreview) {
-                avatarPreview.src = this.profile.avatar_url || '/default-avatar.svg';
+                if (this.profile.avatar_url) {
+                    avatarPreview.src = this.profile.avatar_url;
+                } else {
+                    const { getClientFullPath } = await import('../lib/utils/client-path');
+                    avatarPreview.src = getClientFullPath('/default-avatar.svg');
+                }
             }
         }
 

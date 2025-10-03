@@ -90,12 +90,17 @@ import { getFullPath } from "../lib/utils/path";
       difficulty: '',
       tags: []
     };
+    private getClientFullPath: (path: string) => string;
     
     constructor() {
       this.init();
     }
     
     private async init() {
+      // 載入客戶端路徑函數
+      const { getClientFullPath } = await import('../lib/utils/client-path');
+      this.getClientFullPath = getClientFullPath;
+      
       await this.loadRecipes();
       this.setupEventListeners();
     }
@@ -293,7 +298,7 @@ import { getFullPath } from "../lib/utils/path";
             </div>
             
             <div class="flex gap-2">
-              <a href="${getFullPath('/recipes')}/${recipe.id}" class="flex-1 bg-blue-600 text-white text-center py-2 px-4 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors">
+              <a href="${this.getClientFullPath('/recipes')}/${recipe.id}" class="flex-1 bg-blue-600 text-white text-center py-2 px-4 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors">
                 查看詳情
               </a>
               <button class="p-2 text-gray-400 hover:text-gray-600 transition-colors" title="編輯">
